@@ -1,0 +1,30 @@
+# Every morning (09:00 India time): new advisories, CVEs and news about attacks on AI coding agents.
+# When there's something new it opens an issue labelled threat-watch, and GitHub emails the repo owner.
+name: threat watch
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/threat-watch.mjs --days 1 > digest.md
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Open an issue when there is news
+        run: |
+          if grep -q '^## ' digest.md; then
+            gh issue create --title "Threat watch $(date -u +%F)" --label threat-watch --body-file digest.md
+          else
+            echo "Nothing new today."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
