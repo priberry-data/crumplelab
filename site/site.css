@@ -1,5 +1,6 @@
 @font-face{font-family:"Plex Mono";src:url(/fonts/plex-mono-400.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Plex Mono";src:url(/fonts/plex-mono-600.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Plex Sans";src:url(/fonts/plex-sans.woff2) format("woff2");font-weight:100 700;font-display:swap}
 
 /* P1 phosphor: one green, at four brightnesses. Red and amber only ever mean "breached" and "hijacked". */
 :root{
@@ -41,6 +42,8 @@ nav a{color:var(--fg);text-decoration:none;white-space:nowrap}
 nav a:hover{background:none;color:var(--hi)}
 kbd{font-family:inherit;font-size:13px;background:var(--line);color:var(--hi);padding:0 5px;margin-right:6px}
 nav a:hover kbd{background:var(--hi);color:var(--bg)}
+@media (max-width:1180px){.clock{display:none}}
+@media (max-width:860px){.ver{display:none}nav{gap:12px}}
 @media (max-width:760px){.clock,.ver{display:none}nav{gap:10px}nav a{font-size:0}nav a kbd{font-size:13px;margin:0;padding:2px 7px}}
 
 main{max-width:var(--max);margin:0 auto;padding:0 20px}
@@ -116,3 +119,71 @@ figcaption{font-size:13px;margin-top:16px}
 footer.bar{flex-wrap:wrap;gap:6px 24px;padding:18px 20px 28px;border-top:1px solid var(--line);font-size:13px;margin-top:40px}
 footer a{color:var(--fg)}
 @media (prefers-reduced-motion:reduce){.cursor{animation:none}}
+
+/* Header controls */
+.right{display:flex;align-items:center;gap:16px}
+.modes{display:flex;border:1px solid var(--line-hi)}
+.modes[hidden]{display:none}
+.modes button{font:inherit;font-size:13px;background:none;border:0;color:var(--dim);padding:3px 9px;cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--hi);color:var(--bg)}
+.modes button:not([aria-pressed="true"]):hover{color:var(--hi)}
+.copy{font:inherit;font-size:12px;background:none;border:0;color:var(--dim);cursor:pointer;margin-left:10px;padding:0 4px;vertical-align:1px}
+.copy:hover{background:var(--hi);color:var(--bg)}
+button.key{font:inherit;font-weight:600;background:none;border:0;cursor:pointer}
+
+/* Reports */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.cards figure{margin:0}
+.cards img{display:block;width:100%;height:auto;border:1px solid var(--line)}
+.cards figcaption{font-size:12.5px;margin-top:8px}
+.note{font-size:13px;margin:14px 0 0}
+.published{border:1px dashed var(--line-hi);padding:18px 20px;margin:32px 0}
+.published h3,h3.sub{margin:0 0 10px;font-size:15px;font-weight:600;color:var(--hi)}
+.published p{margin:0;max-width:72ch}
+h3.sub{margin-top:8px}
+.method{margin-bottom:0}
+@media (max-width:760px){.cards{grid-template-columns:1fr}}
+
+/* FAQ */
+.faq details{border-bottom:1px dashed var(--line);padding:12px 0}
+.faq details:first-child{padding-top:0}
+.faq summary{cursor:pointer;color:var(--hi);list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"[+] ";color:var(--dim)}
+.faq details[open] summary::before{content:"[-] "}
+.faq p{margin:10px 0 4px 4ch;max-width:70ch}
+.legal{flex-basis:100%;font-size:12px}
+
+/* Two ways to read the page. Dev is the terminal; public is the same page printed as a lab report. */
+.pub{display:none}
+[data-mode="public"] .dev{display:none}
+[data-mode="public"] .pub{display:revert}
+[data-mode="public"]{
+  --bg:#F3F0E8; --bg-2:#EAE6DB; --fg:#1B1B18; --hi:#0B5F31; --dim:#5F5C53; --line:#CFC9BA; --line-hi:#1B1B18;
+  --bad:#B3261E; --warn:#8A5A00; --ok:#0B5F31; --glow:none;
+}
+[data-mode="public"] body{font-family:"Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px;line-height:1.6}
+[data-mode="public"] body::after{display:none}
+[data-mode="public"] header.bar{background:rgba(243,240,232,.94)}
+[data-mode="public"] .bar,[data-mode="public"] .title,[data-mode="public"] .key,[data-mode="public"] kbd,
+[data-mode="public"] .legend b,[data-mode="public"] .price,[data-mode="public"] .plan h3,[data-mode="public"] figcaption,
+[data-mode="public"] .list th,[data-mode="public"] .published h3,[data-mode="public"] h3.sub,[data-mode="public"] code,
+[data-mode="public"] .man dt{font-family:"Plex Mono",ui-monospace,Menlo,monospace}
+[data-mode="public"] .banner{filter:brightness(0);opacity:.92}
+[data-mode="public"] .tagline{font-size:clamp(24px,3.4vw,34px);font-weight:600;line-height:1.25;color:var(--fg);text-shadow:none;max-width:24ch}
+[data-mode="public"] b,[data-mode="public"] code{color:var(--fg)}
+[data-mode="public"] .big{font-size:clamp(18px,2vw,21px)}
+[data-mode="public"] .indep{color:var(--fg);font-weight:600}
+[data-mode="public"] .key.primary{color:#F3F0E8}
+[data-mode="public"] .key.primary:hover{background:var(--fg)}
+[data-mode="public"] .plan.hot{border-width:2px;border-color:var(--fg);box-shadow:none}
+[data-mode="public"] .list td:last-child{color:var(--dim)}
+[data-mode="public"] .faq summary{color:var(--fg);font-weight:600}
+[data-mode="public"] kbd{background:var(--bg-2);color:var(--fg)}
+
+@media print{
+  body::after,header.bar,.ctas,.replay,.copy{display:none}
+  .window{break-inside:avoid}
+}
+.lost{min-height:100vh;display:grid;place-items:center;padding:20px}
+.lost .out{font-size:15px;border:3px double var(--line-hi);padding:28px 32px;max-width:100%}
