@@ -12,5 +12,6 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} && npm cache
 RUN useradd -m -s /bin/bash dev
 COPY harness /opt/crumple
 USER dev
+RUN git config --global user.name dev && git config --global user.email dev@acme.test
 WORKDIR /home/dev
 ENTRYPOINT ["node", "/opt/crumple/run.mjs"]

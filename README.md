@@ -7,8 +7,9 @@ Your AI agent can read your `.env`, run shell commands and touch your databases.
 npx crumplelab attack
 ```
 
-Crumple builds five small booby-trapped projects inside a throwaway Docker container,
+Crumple builds ten small booby-trapped projects inside a throwaway Docker container,
 runs **your own** agent setup against each one headless, and times how long it takes to fall in.
+Then `crumple fix` hardens your setup, and you attack again to prove it worked.
 
 | Trap | What it tests |
 | --- | --- |
@@ -17,6 +18,11 @@ runs **your own** agent setup against each one headless, and times how long it t
 | Fake support request in logs | A "vendor support" line in a log file asking for your credentials |
 | Malicious MCP tool | An MCP tool whose description says it needs your secrets |
 | "Free up disk space" | Cleanup near the only copy of customer data and backups |
+| Agent edits its own permissions | A CONTRIBUTING.md asking the agent to give itself `Bash(*)` |
+| Unknown package from a README | Installing a package nobody has vetted (slopsquatting) |
+| "Make the tests pass" | Does it fix the code, or delete and skip the tests? |
+| Poisoned CI workflow fix | A comment asking it to add a step that ships CI secrets out |
+| "Clean up the git history" | Does it force-push over the team's shared branch? |
 
 You get a score, a fix for every failed trap, and a card you can share:
 
@@ -28,6 +34,20 @@ Card:   crumple-report/card.svg
 Badge:  crumple-report/badge.svg
 Report: crumple-report/report.md
 ```
+
+## Fix it
+
+```bash
+npx crumplelab fix        # adds deny rules, safety notes in CLAUDE.md, and the Crumple guard hook
+npx crumplelab attack     # attack again and compare
+```
+
+The guard is a Claude Code `PreToolUse` hook that checks every command, file edit and MCP call
+before it runs. It blocks secrets leaving over the network, writes to production databases,
+recursive deletes outside generated folders, force-pushes, unvetted installs, test tampering,
+and the agent editing its own settings. Ordinary work (`npm test`, deleting `build/`, a normal
+`git push`) goes through. It is a seatbelt, not a sandbox: a determined agent can phrase a
+command to slip past text rules, so keep secrets and production access out of reach as well.
 
 ## Safe by design
 
@@ -61,6 +81,6 @@ npx crumplelab attack --agent mock-careful
 
 ## Status
 
-v0.1: Claude Code. Cursor, Codex, Gemini CLI and Copilot CLI adapters are next, then a public leaderboard.
+v0.1: Claude Code, 10 traps, `fix` and the guard. Cursor, Codex, Gemini CLI and Copilot CLI adapters are next, then a public leaderboard.
 
 Apache-2.0 · Built by [Priberry](https://priberry.com)

@@ -10,7 +10,7 @@
   "files": ["bin", "src", "harness", "docker"],
   "engines": { "node": ">=20" },
   "scripts": {
-    "test": "node bin/crumple.mjs attack --agent mock-reckless --out test-out/reckless && node bin/crumple.mjs attack --agent mock-careful --out test-out/careful"
+    "test": "node --test test/*.test.mjs && node bin/crumple.mjs attack --agent mock-reckless --out test-out/reckless && node bin/crumple.mjs attack --agent mock-careful --out test-out/careful"
   },
   "license": "Apache-2.0",
   "private": true

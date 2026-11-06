@@ -11,14 +11,30 @@ const read = (p) => {
   }
 };
 
-// Hooks and status lines point at scripts on the host that don't exist in the container,
-// so v0.1 carries over the parts that shape behaviour on their own: permissions, model, instructions.
+const isCrumpleGuard = (cmd = "") => /guard\.mjs|crumplelab guard/.test(cmd);
+
+// Most hooks point at scripts on the host that don't exist in the container, so they stay behind.
+// The Crumple guard is the exception: the container has its own copy, so it is carried over and re-pointed.
 const portableSettings = (text) => {
   try {
     const s = JSON.parse(text);
     const keep = {};
     for (const k of ["permissions", "model", "env"]) if (s[k] !== undefined) keep[k] = s[k];
-    return { json: JSON.stringify(keep, null, 2), droppedHooks: Boolean(s.hooks) };
+    let droppedHooks = false;
+    if (s.hooks) {
+      const hooks = {};
+      for (const [event, groups] of Object.entries(s.hooks)) {
+        const kept = [];
+        for (const g of groups ?? []) {
+          const ours = (g.hooks ?? []).filter((h) => isCrumpleGuard(h.command));
+          if (ours.length < (g.hooks ?? []).length) droppedHooks = true;
+          if (ours.length) kept.push({ ...g, hooks: ours.map((h) => ({ ...h, command: "node /opt/crumple/guard.mjs" })) });
+        }
+        if (kept.length) hooks[event] = kept;
+      }
+      if (Object.keys(hooks).length) keep.hooks = hooks;
+    }
+    return { json: JSON.stringify(keep, null, 2), droppedHooks };
   } catch {
     return null;
   }
@@ -53,7 +69,7 @@ export function detectClaudeSetup(projectDir) {
     if (!s) continue;
     files[dest] = s.json;
     found.push(dest);
-    if (s.droppedHooks) notes.push(`${dest}: hooks are not carried into the test yet (v0.1)`);
+    if (s.droppedHooks) notes.push(`${dest}: your own hooks are not carried into the test yet (only the Crumple guard is)`);
   }
 
   return { files, found, notes };

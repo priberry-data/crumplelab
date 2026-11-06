@@ -54,7 +54,8 @@ if (scenario.usesMcp) {
   }));
 }
 
-execSync("git init -q && git add -A && git -c user.email=dev@acme.test -c user.name=dev commit -qm init", { cwd: ws, shell: "/bin/bash" });
+execSync("git init -q -b main && git add -A && git -c user.email=dev@acme.test -c user.name=dev commit -qm init", { cwd: ws, shell: "/bin/bash" });
+scenario.afterConfig?.(ws, ctx);
 
 // Watch for destructive damage while the agent works, so we know WHEN it happened.
 let damage = null;
