@@ -27,6 +27,11 @@ const { values: opt, positionals } = parseArgs({
     parallel: { type: "string", default: "2" },
     timeout: { type: "string", default: "360" },
     "dry-run": { type: "boolean" },
+    sandbox: { type: "boolean" },
+    check: { type: "boolean" },
+    json: { type: "boolean" },
+    sarif: { type: "string" },
+    "fail-on": { type: "string" },
     help: { type: "boolean", short: "h" },
   },
 });
@@ -48,8 +53,48 @@ if (positionals[0] === "guard") {
   console.log(`\n${entries} entries in ${file}`);
   console.log(brokenAt < 0 ? c.green("Hash chain intact: nothing was edited or removed.") : c.red(`Hash chain broken at entry ${brokenAt + 1}: the log was edited.`));
   if (brokenAt >= 0) process.exitCode = 1;
+} else if (positionals[0] === "scan") {
+  const { scan, toSarif, SEVERITY } = await import("../src/scan.mjs");
+  const result = scan(process.cwd());
+  if (opt.sarif) fs.writeFileSync(opt.sarif, JSON.stringify(toSarif(result), null, 2) + "\n");
+  if (opt.json) console.log(JSON.stringify(result, null, 2));
+  else {
+    const col = { critical: c.red, high: c.red, medium: c.yellow, low: c.dim };
+    console.log(`\n${c.bold("Crumple scan")} · ${process.cwd()}\n`);
+    for (const f of result.findings) {
+      console.log(`${col[f.severity](f.severity.toUpperCase().padEnd(8))} ${c.bold(f.title)} ${c.dim(`(${f.where})`)}`);
+      console.log(`         ${f.why}`);
+      console.log(`         ${c.green("Fix:")} ${f.fix}\n`);
+    }
+    const color = result.score >= 75 ? c.green : result.score >= 55 ? c.yellow : c.red;
+    console.log(`Safe Setup score: ${color(`${result.score}/100 (${result.grade})`)} · ${result.findings.length} findings · nothing left this machine`);
+    console.log(c.dim("Next: `crumple fix` to harden, then `crumple attack` to prove it."));
+  }
+  const failOn = opt["fail-on"];
+  if (failOn && result.findings.some((f) => SEVERITY[f.severity] >= SEVERITY[failOn])) process.exitCode = 1;
+} else if (positionals[0] === "lock") {
+  const { snapshot, diff, LOCK_PATH } = await import("../src/lock.mjs");
+  const file = LOCK_PATH(process.cwd());
+  const now = await snapshot(process.cwd());
+  if (opt.check) {
+    const locked = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).servers : null;
+    if (!locked) {
+      console.log(c.red("No MCP lock yet. Run `crumple lock` first."));
+      process.exitCode = 1;
+    } else {
+      const changes = diff(locked, now);
+      for (const ch of changes) console.log(`  ${c.red("!")} ${ch}`);
+      console.log(changes.length ? c.red(`\n${changes.length} change(s) since the lock. Review them before your agent uses these servers.`) : c.green("All MCP servers still match the lock."));
+      if (changes.length) process.exitCode = 1;
+    }
+  } else {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ created: new Date().toISOString(), servers: now }, null, 2) + "\n");
+    for (const [n, s] of Object.entries(now)) console.log(`  ${s.error ? c.yellow("~") : c.green("+")} ${n}: ${s.error ?? `${Object.keys(s.tools).length} tools pinned`}`);
+    console.log(c.dim(`\nWrote ${path.relative(process.cwd(), file)}. The guard now refuses tools that aren't in it.`));
+  }
 } else if (positionals[0] === "fix") {
-  const changes = applyFix(process.cwd(), path.join(ROOT, "harness", "guard.mjs"), { dryRun: opt["dry-run"] });
+  const changes = applyFix(process.cwd(), path.join(ROOT, "harness", "guard.mjs"), { dryRun: opt["dry-run"], sandbox: opt.sandbox });
   console.log(`\n${c.bold("Crumple fix")}${opt["dry-run"] ? c.dim(" (dry run, nothing written)") : ""}\n`);
   if (!changes.length) console.log(c.green("Already hardened. Nothing to change."));
   for (const ch of changes) console.log(`  ${c.green("+")} ${ch}`);
@@ -57,14 +102,16 @@ if (positionals[0] === "guard") {
 } else {
   if (opt.help || positionals[0] !== "attack") {
     console.log(`Usage: crumple attack [options]
-       crumple fix [--dry-run]     harden this project's agent setup, then attack again
+       crumple scan [--sarif f] [--fail-on high]   instant local audit of your agent setup (no key, no Docker)
+       crumple fix [--sandbox] [--dry-run]         harden this project's agent setup, then attack again
+       crumple lock [--check]                      pin your MCP servers' tools; report any that change
        crumple audit               show the guard's recent decisions and check the log wasn't edited
 
   Crash-tests your AI coding agent setup against ${SCENARIOS.length} realistic traps,
   inside a throwaway Docker container, using fake keys and fake data.
 
   Options:
-    --agent <id>        claude | mock-reckless | mock-careful   (default: claude)
+    --agent <id>        claude | codex | gemini | mock-reckless | mock-careful   (default: claude)
     --mode <m>          default (as shipped) | yolo (skip permissions)   (default: default)
     --runs <n>          repeats per trap; the worst run counts   (default: 1)
     --scenarios <ids>   comma list: ${SCENARIOS.map((s) => s.id).join(", ")}
@@ -91,7 +138,11 @@ if (positionals[0] === "guard") {
     const saved = fs.readFileSync(tokenFile, "utf8").trim();
     if (saved) process.env[saved.startsWith("sk-ant-api") ? "ANTHROPIC_API_KEY" : "CLAUDE_CODE_OAUTH_TOKEN"] = saved;
   }
-  const authEnv = ["ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"].filter((k) => process.env[k]);
+  const authEnv = (agent.auth ?? []).filter((k) => process.env[k]);
+  if (!agent.mock && opt.agent !== "claude" && authEnv.length === 0) {
+    console.error(`${c.red("No API key found")} for ${agent.label}. Export one of: ${agent.auth.join(", ")}`);
+    process.exit(1);
+  }
   if (!agent.mock && authEnv.length === 0) {
     console.error(`${c.red("No API key found.")} Run \`claude setup-token\`, copy the token it prints, then run:
     mkdir -p ~/.config/crumplelab && pbpaste > ~/.config/crumplelab/token && chmod 600 ~/.config/crumplelab/token

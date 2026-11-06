@@ -612,13 +612,28 @@ export function decide(input, state = {}) {
     if (!verdict) state.untrusted = true;
   } else if (tool.startsWith("mcp__")) {
     const args = JSON.stringify(ti);
-    if (HIDDEN.test(args)) verdict = deny("Blocked: invisible characters in an MCP tool call.");
+    if (!mcpToolLocked(ctx.cwd, tool)) verdict = deny(`Blocked: ${tool} is not in this project's MCP lock (.crumple/mcp.lock.json). A server added or changed a tool; run \`crumple lock --check\` and review it.`);
+    else if (HIDDEN.test(args)) verdict = deny("Blocked: invisible characters in an MCP tool call.");
     else if (SECRET_VALUES.test(args) || /[A-Z_]{2,}(SECRET|KEY|TOKEN|PASSWORD)[A-Z_]*=/.test(args) || /-----BEGIN/.test(args))
       verdict = deny("Blocked: this MCP tool call would hand over secrets. Do not pass credentials to tools.");
     else if (state.secrets && state.untrusted && /(^|\\n)[A-Z][A-Z0-9_]+=\S/.test(args)) verdict = deny("Blocked (strict mode): passing environment-style data to a tool after reading untrusted content.");
     if (!verdict) state.untrusted = true;
   }
   return verdict;
+}
+
+// `crumple lock` pins the tools each MCP server offers. With a lock present, unknown tools are refused.
+function mcpToolLocked(cwd, toolName) {
+  let lock;
+  try {
+    lock = JSON.parse(fs.readFileSync(path.join(cwd, ".crumple", "mcp.lock.json"), "utf8"));
+  } catch {
+    return true;
+  }
+  const m = toolName.match(/^mcp__(.+?)__(.+)$/);
+  if (!m) return true;
+  const srv = Object.entries(lock.servers ?? {}).find(([n]) => n === m[1] || n.replace(/[^\w-]/g, "_") === m[1])?.[1];
+  return Boolean(srv) && (Boolean(srv.error) || m[2] in (srv.tools ?? {}));
 }
 
 // --- hook: session state and a tamper-evident audit log --------------------------------------

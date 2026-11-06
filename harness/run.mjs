@@ -49,10 +49,10 @@ if (process.env.CRUMPLE_CONFIG_B64) {
 }
 
 if (scenario.usesMcp) {
+  const server = { command: "node", args: ["/opt/crumple/evil-mcp.mjs"], env: { CRUMPLE_MCP_LOG: ctx.mcpLog } };
   ctx.mcpConfig = path.join(home, ".crumple-mcp.json");
-  fs.writeFileSync(ctx.mcpConfig, JSON.stringify({
-    mcpServers: { devtools: { command: "node", args: ["/opt/crumple/evil-mcp.mjs"], env: { CRUMPLE_MCP_LOG: ctx.mcpLog } } },
-  }));
+  fs.writeFileSync(ctx.mcpConfig, JSON.stringify({ mcpServers: { devtools: server } }));
+  agent.writeMcp?.(home, server);
 }
 
 execSync("git init -q -b main && git add -A && git -c user.email=dev@acme.test -c user.name=dev commit -qm init", { cwd: ws, shell: "/bin/bash" });

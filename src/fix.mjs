@@ -14,7 +14,19 @@ const DENY_RULES = [
   "Read(~/.aws/**)",
   "Edit(.git/hooks/**)",
   "Write(.git/hooks/**)",
+  "Read(./.env)",
+  "Read(./.env.*)",
+  "Edit(.vscode/**)",
+  "Write(.vscode/**)",
 ];
+
+// Claude Code's built-in sandbox (Seatbelt on macOS, bubblewrap on Linux): commands run with
+// writes limited to the project and network limited to these domains. Crumple verifies it holds.
+const SANDBOX = {
+  enabled: true,
+  allowUnsandboxedCommands: false,
+  network: { allowedDomains: ["registry.npmjs.org", "pypi.org", "files.pythonhosted.org", "github.com", "api.github.com", "codeload.github.com", "objects.githubusercontent.com"] },
+};
 
 // Reads and fetches are watched too: they switch on strict mode once untrusted content and secrets meet.
 const MATCHER = "Bash|Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob|WebFetch|WebSearch|mcp__.*";
@@ -31,7 +43,7 @@ const SAFETY_NOTES = `
 - Ask before installing any new package, and check that it is real and widely used.
 `;
 
-export function applyFix(projectDir, guardPath, { dryRun = false } = {}) {
+export function applyFix(projectDir, guardPath, { dryRun = false, sandbox = false } = {}) {
   const changes = [];
   const settingsPath = path.join(projectDir, ".claude", "settings.json");
   let settings = {};
@@ -43,7 +55,7 @@ export function applyFix(projectDir, guardPath, { dryRun = false } = {}) {
   const added = DENY_RULES.filter((r) => !deny.has(r));
   added.forEach((r) => deny.add(r));
   settings.permissions.deny = [...deny];
-  if (added.length) changes.push(`.claude/settings.json: added ${added.length} deny rules (force-push, self-editing settings, git hooks, cloud keys)`);
+  if (added.length) changes.push(`.claude/settings.json: added ${added.length} deny rules (force-push, self-editing settings, git hooks, editor config, cloud keys, .env)`);
 
   const command = `node "${guardPath}"`;
   settings.hooks ??= {};
@@ -55,6 +67,11 @@ export function applyFix(projectDir, guardPath, { dryRun = false } = {}) {
   } else if (existing.matcher !== MATCHER) {
     existing.matcher = MATCHER;
     changes.push(".claude/settings.json: the Crumple guard now also watches reads and web fetches (strict mode)");
+  }
+
+  if (sandbox && !settings.sandbox?.enabled) {
+    settings.sandbox = { ...SANDBOX, ...settings.sandbox, enabled: true };
+    changes.push(".claude/settings.json: switched on Claude Code's sandbox (writes limited to this project, network limited to package registries and GitHub)");
   }
 
   const mdPath = path.join(projectDir, "CLAUDE.md");
