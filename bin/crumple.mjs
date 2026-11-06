@@ -14,6 +14,8 @@ import { detectClaudeSetup } from "../src/detect.mjs";
 import { summarize, headline, writeReport, fmtTime } from "../src/report.mjs";
 import { applyFix } from "../src/fix.mjs";
 import { banner } from "../src/banner.mjs";
+import { boot, progress, spin } from "../src/ui.mjs";
+import { crashBox, diagnostics, issueUrl, EMAIL } from "../src/bug.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { version: VERSION } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
@@ -48,12 +50,25 @@ const { values: opt, positionals } = parseArgs({
   },
 });
 
+// If Crumple itself breaks, say so plainly and hand the user a ready-made bug report. Nothing is sent.
+const crashed = (e) => {
+  process.stderr.write(crashBox({ version: VERSION, command: positionals.join(" "), agent: positionals[0] === "attack" ? opt.agent : undefined, error: e?.stack ?? e, color: !process.env.NO_COLOR }));
+  process.exit(70);
+};
+process.on("uncaughtException", crashed);
+process.on("unhandledRejection", crashed);
+
 const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0m`, yellow: (s) => `\x1b[33m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
 
 // The guard speaks JSON to the agent over stdout, so it (and any machine-readable output) never gets the banner.
 if (!["guard", "audit"].includes(positionals[0]) && !opt.json) process.stdout.write(banner({ version: VERSION, tagline: "the crash test for AI coding agents" }));
 
-if (positionals[0] === "guard") {
+if (positionals[0] === "bug") {
+  // Everything a bug report needs, and the link to file one. Nothing is sent.
+  console.log(`\n${c.bold("Report a bug")}\n\n${diagnostics({ version: VERSION, command: "bug" })}\n`);
+  console.log(`Open this link to file it on GitHub (pre-filled, you can edit it first):\n${issueUrl({ version: VERSION, command: "crumple bug" })}\n`);
+  console.log(c.dim(`Or email ${EMAIL}. Security issue? See https://crumple.priberry.com/.well-known/security.txt`));
+} else if (positionals[0] === "guard") {
   // Same guard the container uses, exposed for hooks on the user's machine.
   (await import("../harness/guard.mjs")).runHook();
 } else if (positionals[0] === "audit") {
@@ -75,7 +90,11 @@ if (positionals[0] === "guard") {
   console.log(`\n${all.length} traps`);
 } else if (positionals[0] === "scan") {
   const { scan, toSarif, SEVERITY } = await import("../src/scan.mjs");
-  const result = scan(process.cwd());
+  const result = opt.json || opt.sarif ? scan(process.cwd()) : await spin("reading your agent setup the way an attacker would", async () => {
+    const r = scan(process.cwd());
+    await new Promise((ok) => setTimeout(ok, 350));
+    return r;
+  });
   if (opt.sarif) fs.writeFileSync(opt.sarif, JSON.stringify(toSarif(result), null, 2) + "\n");
   if (opt.json) console.log(JSON.stringify(result, null, 2));
   else {
@@ -139,6 +158,7 @@ if (positionals[0] === "guard") {
        crumple lock [--check]                      pin your MCP servers' tools; report any that change
        crumple list [--pack dir]                   every trap, its source and the standards it maps to
        crumple audit               show the guard's recent decisions and check the log wasn't edited
+       crumple bug                 report a problem with Crumple (pre-filled, nothing is sent)
 
   Crash-tests your AI coding agent setup against ${SCENARIOS.length} realistic traps,
   inside a throwaway Docker container, using fake keys and fake data.
@@ -188,9 +208,19 @@ if (positionals[0] === "guard") {
     process.exit(1);
   }
   if (spawnSync("docker", ["image", "inspect", IMAGE], { stdio: "ignore" }).status !== 0) {
-    console.log(c.dim("Building the crash-test container (first run only)…"));
-    const b = spawnSync("docker", ["build", "-q", "-f", path.join(ROOT, "docker/Dockerfile"), "-t", IMAGE, ROOT], { stdio: "inherit" });
-    if (b.status !== 0) process.exit(1);
+    // Docker's own chatter stays hidden unless the build fails.
+    const b = await spin("building the crash-test container (first run only, about a minute)", async () =>
+      new Promise((done) => {
+        const p = spawn("docker", ["build", "-q", "-f", path.join(ROOT, "docker/Dockerfile"), "-t", IMAGE, ROOT]);
+        let log = "";
+        p.stdout.on("data", (d) => (log += d));
+        p.stderr.on("data", (d) => (log += d));
+        p.on("close", (status) => done({ status, log }));
+      }));
+    if (b.status !== 0) {
+      console.error(c.red("The crash-test container didn't build:\n") + b.log.slice(-2000));
+      process.exit(1);
+    }
   }
 
   const packDirs = opt.pack.map((p) => path.resolve(p));
@@ -203,6 +233,12 @@ if (positionals[0] === "guard") {
   const configB64 = Buffer.from(JSON.stringify(setup.files)).toString("base64");
   const modeLabel = opt.mode === "yolo" ? "Hands-off mode (permissions skipped)" : "As shipped (default permissions)";
 
+  await boot([
+    ["sandbox", "docker · cap-drop ALL · no-new-privileges"],
+    ["canaries", "fresh fake keys for every trap"],
+    ["sinks", "dns · http · tls · every exit leads back here"],
+    ["traps", `${scenarios.length} armed`],
+  ]);
   console.log(`\n${c.bold("Crumple agent crash test")} · ${agent.label} · ${modeLabel}`);
   console.log(c.dim(setup.found.length ? `Your setup: ${setup.found.join(", ")}` : agent.mock ? "Scripted test agent" : "No project or user config found; testing default settings"));
   for (const n of setup.notes) console.log(c.dim(`Note: ${n}`));
@@ -229,18 +265,22 @@ if (positionals[0] === "guard") {
 
   const jobs = scenarios.flatMap((s) => Array.from({ length: Number(opt.runs) }, () => s));
   const results = [];
-  let next = 0;
+  const live = progress({ total: jobs.length, label: "agent at work" });
+  let next = 0, breaches = 0;
   async function worker() {
     while (next < jobs.length) {
       const s = jobs[next++];
       const r = await runOne(s);
       results.push(r);
+      if (r.breached) breaches++;
       const tag = r.error ? c.red("ERROR") : r.breached ? c.red(`BREACHED in ${fmtTime(r.timeToBreachMs)}`) : r.hijacked ? c.yellow("hijacked, contained") : c.green("held");
-      console.log(`  ${s.title.padEnd(52)} ${tag}${r.breached || r.hijacked ? c.dim(`  ${r.evidence}`) : ""}`);
-      if (r.error) console.log(c.dim(r.error.split("\n").slice(-4).join("\n")));
+      live.log(`  ${s.title.padEnd(52)} ${tag}${r.breached || r.hijacked ? c.dim(`  ${r.evidence}`) : ""}`);
+      if (r.error) live.log(c.dim(r.error.split("\n").slice(-4).join("\n")));
+      live.tick(breaches ? `${breaches} breached` : "");
     }
   }
   await Promise.all(Array.from({ length: Math.max(1, Number(opt.parallel)) }, worker));
+  live.stop();
 
   const sum = summarize(results, scenarios);
   const outDir = path.resolve(opt.out);
@@ -251,5 +291,12 @@ if (positionals[0] === "guard") {
   console.log(c.dim(`Card:   ${path.join(outDir, "card.svg")}`));
   console.log(c.dim(`Badge:  ${path.join(outDir, "badge.svg")}`));
   console.log(c.dim(`Report: ${path.join(outDir, "report.md")}`));
-  if (sum.rows.some((r) => r.errored)) process.exitCode = 2;
+  if (sum.rows.some((r) => r.errored)) {
+    // A trap that errors is Crumple's problem to fix, so make reporting it one click.
+    const errs = results.filter((r) => r.error).map((r) => `[${r.scenario}] ${r.error}`).join("\n\n");
+    console.log(c.yellow(`\nSome traps errored instead of finishing. If that looks like our bug, report it in one click:`));
+    console.log(issueUrl({ title: `Trap errors with ${opt.agent}`, version: VERSION, command: `attack --agent ${opt.agent}`, agent: opt.agent, error: errs }));
+    console.log(c.dim("Nothing was sent. The link opens a pre-filled issue you can read first."));
+    process.exitCode = 2;
+  }
 }

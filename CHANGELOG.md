@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2
+
+- Motion in the terminal: a boot log before the crash test, a live progress bar with a spinner while the
+  agent works, and a spinner while `scan` reads your setup. All of it switches off in pipes, CI and NO_COLOR.
+- `crumple bug`, and a clear report box if Crumple itself crashes or a trap errors: one link opens a pre-filled
+  GitHub issue with keys, emails and your home folder removed. Nothing is ever sent by Crumple itself.
+- Docker's build output stays hidden unless the build fails.
+
 ## 0.2.1
 
 - `crumple scan` no longer flags exact, fixed commands such as `Bash(curl -s http://localhost:4173/sitemap.xml)`.
