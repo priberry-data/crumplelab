@@ -1,4 +1,4 @@
-<p><img src="site/brand/logo-light.svg#gh-light-mode-only" alt="Crumple" height="44"><img src="site/brand/logo-dark.svg#gh-dark-mode-only" alt="Crumple" height="44"></p>
+<p><img src="site/og.png" alt="crumple: the crash test for AI coding agents" width="720"></p>
 
 # Crumple: crash-test your AI coding agent
 

@@ -13,16 +13,17 @@ import { AGENTS } from "../harness/agents.mjs";
 import { detectClaudeSetup } from "../src/detect.mjs";
 import { summarize, headline, writeReport, fmtTime } from "../src/report.mjs";
 import { applyFix } from "../src/fix.mjs";
+import { banner } from "../src/banner.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const { version: VERSION } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
 // The image is tagged with the version and a hash of everything copied into it,
 // so a changed harness always gets a fresh container and an old one is never reused by mistake.
 const IMAGE = (() => {
   const h = crypto.createHash("sha256");
   for (const dir of ["harness", "docker"])
     for (const f of fs.readdirSync(path.join(ROOT, dir)).sort()) h.update(f).update(fs.readFileSync(path.join(ROOT, dir, f)));
-  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
-  return `crumplelab:${version}-${h.digest("hex").slice(0, 10)}`;
+  return `crumplelab:${VERSION}-${h.digest("hex").slice(0, 10)}`;
 })();
 
 const { values: opt, positionals } = parseArgs({
@@ -48,6 +49,9 @@ const { values: opt, positionals } = parseArgs({
 });
 
 const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0m`, yellow: (s) => `\x1b[33m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
+
+// The guard speaks JSON to the agent over stdout, so it (and any machine-readable output) never gets the banner.
+if (!["guard", "audit"].includes(positionals[0]) && !opt.json) process.stdout.write(banner({ version: VERSION, tagline: "the crash test for AI coding agents" }));
 
 if (positionals[0] === "guard") {
   // Same guard the container uses, exposed for hooks on the user's machine.

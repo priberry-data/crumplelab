@@ -1,9 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#111111"/>
-  <g transform="translate(9.5 10.5) scale(0.7)">
-    <path fill="#F4F2EC" d="M32 32H4A28 28 0 0 1 32 4Z"/>
-    <path fill="#FFD60A" d="M34.5 29.5V1.5A28 28 0 0 1 62.5 29.5Z"/>
-    <path fill="#F4F2EC" d="M32 32H60A28 28 0 0 1 32 60Z"/>
-    <path fill="#FFD60A" d="M32 32V60A28 28 0 0 1 4 32Z"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D2FFDC"/><stop offset=".5" stop-color="#6DFF95"/><stop offset="1" stop-color="#2A9A4F"/></linearGradient></defs>
+<rect width="160" height="160" rx="30" fill="#050705"/>
+<g transform="translate(21 30)"><path d="M10 0h10v20h-10zM20 0h10v20h-10zM30 0h10v20h-10zM40 0h10v20h-10zM50 0h10v20h-10zM60 0h10v20h-10zM0 20h10v20h-10zM10 20h10v20h-10zM0 40h10v20h-10zM10 40h10v20h-10zM0 60h10v20h-10zM10 60h10v20h-10zM10 80h10v20h-10zM20 80h10v20h-10zM30 80h10v20h-10zM40 80h10v20h-10zM50 80h10v20h-10zM60 80h10v20h-10z" fill="url(#g)"/><rect x="92" y="62" width="26" height="38" fill="#6DFF95"/></g>
 </svg>
