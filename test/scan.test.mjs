@@ -46,3 +46,17 @@ test("crumple fix --sandbox clears what it can", () => {
   assert.ok(after.score > before.score);
   assert.equal(after.findings.length, 0, after.findings.map((f) => f.title).join(", "));
 });
+
+test("narrow approvals and your own local hooks are not flagged", () => {
+  const { home, proj } = fixture();
+  fs.writeFileSync(path.join(proj, ".claude/settings.local.json"), JSON.stringify({
+    permissions: { allow: ["Bash(curl -s http://localhost:4173/sitemap.xml)", "mcp__ahrefs__site-explorer-metrics", "Bash(curl *)", "mcp__ahrefs"] },
+    hooks: { Stop: [{ hooks: [{ type: "command", command: "say done" }] }] },
+  }));
+  const titles = scan(proj, { home }).findings.map((f) => f.title).join("\n");
+  assert.doesNotMatch(titles, /localhost:4173/, "an exact command is not a wildcard");
+  assert.doesNotMatch(titles, /site-explorer-metrics/, "one MCP tool is a narrow approval");
+  assert.doesNotMatch(titles, /ships its own hooks/, "settings.local.json is not shipped with a clone");
+  assert.match(titles, /Bash\(curl \*\)/);
+  assert.match(titles, /\(mcp__ahrefs\)/);
+});

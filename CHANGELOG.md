@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+- `crumple scan` no longer flags exact, fixed commands such as `Bash(curl -s http://localhost:4173/sitemap.xml)`.
+  Only wildcard network rules can carry data out, so only those count.
+- Single MCP tools (`mcp__server__tool`) are no longer flagged; whole servers and open `WebFetch` still are.
+- Hooks in your own `.claude/settings.local.json` are no longer reported as shipped by the repository.
+- Packages with install scripts are listed once each.
+
 ## 0.2.0
 
 - 18 built-in traps, each from a real CVE, incident or paper, mapped to OWASP LLM, OWASP Agentic (ASI)

@@ -71,6 +71,8 @@ h1{margin:0}
 .big{font-size:clamp(17px,1.9vw,20px);line-height:1.55;color:var(--fg);max-width:62ch;margin:0 0 28px}
 @media (max-width:600px){.window{padding:30px 16px 20px;margin:52px 0}}
 
+.install{display:inline-block;margin:0 0 22px;padding-right:12px}
+.install .copy{margin-left:14px}
 .run{margin-top:48px}
 .out{background:var(--bg-2);border:1px solid var(--line);padding:18px 20px;font-size:13px;line-height:1.7;overflow-x:auto;white-space:pre}
 .run .out{border:0;padding:6px 0 0;background:none}

@@ -28,7 +28,7 @@ modes.addEventListener("click", (e) => {
 });
 
 // Number keys jump between windows, like function keys on an old terminal. "m" flips the mode.
-const keys = { 1: "how", 2: "traps", 3: "fix", 4: "reports", 5: "pricing", 6: "faq", 7: "access" };
+const keys = { 1: "how", 2: "traps", 3: "fix", 4: "reports", 5: "pricing", 6: "faq", 7: "start" };
 addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(e.target.tagName)) return;
   if (e.key === "m") return modes.querySelector(`[data-set="${root.dataset.mode === "public" ? "dev" : "public"}"]`).click();

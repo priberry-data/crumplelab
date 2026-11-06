@@ -48,9 +48,11 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
     for (const rule of perm.allow ?? []) {
       const r = String(rule);
       if (/^Bash(\(\*\)|\(:\*\))?$/.test(r)) add("critical", where, `Every shell command is pre-approved (${r})`, "A prompt injection becomes code execution on your machine immediately.", `Remove "${r}" and allow specific commands instead.`);
-      else if (/^Bash\((curl|wget|nc|ssh|scp|rsync|http)\b/.test(r)) add("high", where, `Network tool pre-approved (${r})`, "This is the exact command attackers use to send your .env out.", `Remove "${r}"; let the agent ask, or allow only fixed URLs.`);
+      // An exact rule only ever approves that one command, so only wildcards can carry your data out.
+      else if (/^Bash\((curl|wget|nc|ssh|scp|rsync|http)\b/.test(r) && r.includes("*")) add("high", where, `Network tool pre-approved (${r})`, "This is the exact command attackers use to send your .env out.", `Remove "${r}"; let the agent ask, or allow only fixed URLs.`);
       else if (/^Bash\((git|find|fd|rg|go|xargs|env|sed|awk|tar|npx|npm|pnpm|yarn|node|python3?|bash|sh)(:\*|\s\*|\*)?\)$/.test(r)) add("high", where, `Broad pre-approval that can run any program (${r})`, "Flags like `git -c core.fsmonitor=`, `find -exec`, `npm run` and `npx` turn a \"safe\" prefix into arbitrary code (Trail of Bits, 2025).", `Narrow "${r}" to exact subcommands (for example "Bash(git status)"), and install the Crumple guard, which checks flags.`);
-      else if (/^(WebFetch|mcp__[\w-]+)$/.test(r)) add("medium", where, `Pre-approved without limits (${r})`, "Lets content from anywhere drive the agent and receive data without a prompt.", `Scope "${r}" to specific domains or tools.`);
+      // A single MCP tool (mcp__server__tool) is a narrow approval; a whole server or open WebFetch is not.
+      else if (/^WebFetch$/.test(r) || (/^mcp__[\w-]+$/.test(r) && r.split("__").length === 2)) add("medium", where, `Pre-approved without limits (${r})`, "Lets content from anywhere drive the agent and receive data without a prompt.", `Scope "${r}" to specific domains or tools.`);
     }
     for (const d of perm.deny ?? []) if (/\.env/.test(String(d))) denyEnv = true;
     if (s.enableAllProjectMcpServers) add("high", where, "Every MCP server a repository ships is started automatically", "Cloning a hostile repo starts its MCP server with your permissions (Check Point, CVE-2025-59536).", "Remove `enableAllProjectMcpServers` and approve servers one by one.");
@@ -61,7 +63,8 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
     const hooks = JSON.stringify(s.hooks ?? {});
     if (/guard\.mjs|crumplelab guard/.test(hooks)) guarded = true;
     if (/\b(curl|wget|nc)\b|https?:\/\//.test(hooks)) add("high", where, "A hook sends data over the network", "Hooks run automatically on every tool call or session start, without the agent or you approving them.", "Check every hook command; remove any that talk to the network.");
-    if (f.startsWith(projectDir) && s.hooks && !/guard\.mjs/.test(hooks)) add("medium", where, "This repository ships its own hooks", "Hooks in a cloned repo run commands on your machine as soon as the agent starts.", "Review them before running an agent here.");
+    // settings.local.json is the user's own and stays out of git; only settings.json comes with a clone.
+    if (f === P(".claude/settings.json") && s.hooks && !/guard\.mjs/.test(hooks)) add("medium", where, "This repository ships its own hooks", "Hooks in a cloned repo run commands on your machine as soon as the agent starts.", "Review them before running an agent here.");
     if (s.sandbox?.enabled) sandboxed = true;
   }
   if (!guarded) add("medium", "agent setup", "No runtime guard checks the agent's commands", "Nothing stops a hijacked agent from sending keys out or deleting data between your prompts.", "Run `crumple fix`.");
@@ -128,7 +131,7 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
   const npmrc = (read(P(".npmrc")) ?? "") + (read(H(".npmrc")) ?? "");
   const lock = json(P("package-lock.json"));
   if (lock && !/ignore-scripts\s*=\s*true/.test(npmrc)) {
-    const scripts = Object.entries(lock.packages ?? {}).filter(([k, v]) => k && v?.hasInstallScript).map(([k]) => k.split("node_modules/").pop());
+    const scripts = [...new Set(Object.entries(lock.packages ?? {}).filter(([k, v]) => k && v?.hasInstallScript).map(([k]) => k.split("node_modules/").pop()))];
     if (scripts.length) add("medium", "package-lock.json", `${scripts.length} dependencies run install scripts (${scripts.slice(0, 4).join(", ")}${scripts.length > 4 ? "…" : ""})`, "Install scripts run with your keys in reach; this is how Shai-Hulud and the Nx attack spread.", "Set `ignore-scripts=true` in .npmrc and allow only the few that need it.");
   }
 

@@ -4,7 +4,7 @@
 > projects, runs a developer's own Claude Code, Codex CLI or Gemini CLI setup against each one inside a
 > sealed Docker container with fake keys, reports what broke, and installs fixes.
 
-Status: v0.2.0, early access. Install: npx crumplelab scan. Source: https://github.com/priberry-data/crumplelab. Contact: crumple@priberry.com. Built by Priberry.
+Status: v0.2.1, open source, free. Install: npx crumplelab scan. Source: https://github.com/priberry-data/crumplelab. Contact: crumple@priberry.com. Built by Priberry.
 
 ## Commands
 - `crumple scan`: local audit of an agent setup. No API key, no network. Safe Setup score 0-100, SARIF output, `--fail-on high` for CI.

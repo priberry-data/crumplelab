@@ -31,7 +31,7 @@
 <a class="skip" href="#main">skip to content</a>
 
 <header class="bar" role="banner">
-  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.2.0</span></a>
+  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.2.1</span></a>
   <nav aria-label="Sections">
     <a href="#how"><kbd>1</kbd>how</a>
     <a href="#traps"><kbd>2</kbd>traps</a>
@@ -39,7 +39,7 @@
     <a href="#reports"><kbd>4</kbd>reports</a>
     <a href="#pricing"><kbd>5</kbd>pricing</a>
     <a href="#faq"><kbd>6</kbd>faq</a>
-    <a href="#access"><kbd>7</kbd>access</a>
+    <a href="#start"><kbd>7</kbd>start</a>
   </nav>
   <div class="right">
     <div class="modes" role="group" aria-label="How to show this page" hidden>
@@ -52,7 +52,7 @@
 <main id="main">
 
 <section class="hero" aria-labelledby="hero-title">
-  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.2.0 · (c) 2026 priberry
+  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.2.1 · (c) 2026 priberry
 memory test ............ 640K ok
 sandbox ................ ok<span class="x">  docker · cap-drop ALL · no-new-privileges</span>
 traps .................. 18 armed
@@ -67,9 +67,10 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
   <p class="lede dev">Your agent can read your <code>.env</code>, run shell commands and touch your databases. Crumple plants <b>18 traps modelled on real attacks</b>, runs your own Claude Code, Codex or Gemini CLI setup against them, and shows you exactly where it breaks. Then it fixes it.</p>
   <p class="lede pub">AI coding assistants such as Claude Code, Codex and Gemini CLI can read passwords, run commands on a computer and change live databases. Crumple sets <b>18 realistic traps, modelled on real attacks</b>, and records exactly what each assistant does when it walks into one. Teams learn whether their setup is safe, and how to make it safer.</p>
 
+  <pre class="out install"><span class="p">$</span> <span data-copy>npx crumplelab scan</span></pre>
   <div class="ctas">
-    <a class="key primary" href="#access">[ request early access ]</a>
-    <a class="key" href="#reports">[ how we report ]</a>
+    <a class="key primary" href="#start">[ get started ]</a>
+    <a class="key" href="https://github.com/priberry-data/crumplelab">[ source on github ]</a>
   </div>
 
   <figure class="window run dev" aria-labelledby="run-cap">
@@ -215,16 +216,22 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <details><summary>Which agents does it support?</summary><p>Claude Code, Codex CLI and Gemini CLI today. GitHub Copilot CLI and Cursor are next.</p></details>
     <details><summary>Are you affiliated with Anthropic, OpenAI or Google?</summary><p>No. Crumple is independent and built by Priberry. We don't build or sell an AI agent, so we have no reason to favour one.</p></details>
     <details><summary>What happens when you find a real vulnerability?</summary><p>We report it privately to the vendor first and give them at least 30 days to fix it before we publish. Found one in Crumple itself? See <a href="/.well-known/security.txt">security.txt</a>.</p></details>
-    <details><summary>When can I install it?</summary><p>Now. It needs Node 20 or newer, and Docker for the crash test. Run <code>npx crumplelab scan</code> to start. The code is on <a href="https://github.com/priberry-data/crumplelab">GitHub</a> under Apache 2.0. It is early access, so tell us what breaks: crumple@priberry.com.</p></details>
+    <details><summary>When can I install it?</summary><p>Now. Run <code>npx crumplelab scan</code>. It needs Node 20 or newer, and Docker for the crash test. The code is on <a href="https://github.com/priberry-data/crumplelab">GitHub</a> under Apache 2.0.</p></details>
   </div>
 </section>
 
-<section id="access" class="window" aria-labelledby="access-t">
-  <h2 id="access-t" class="title"><span>═[7]═ early access</span></h2>
-  <p class="big">Find out before an attacker does. Try it now on your own machine, or write to us if your team wants help running it.</p>
-  <pre class="out dev"><span class="p">$</span> <span data-copy>npx crumplelab scan</span></pre>
-  <pre class="out mail dev"><span class="p">$</span> mail <a href="mailto:crumple@priberry.com?subject=crumple%20early%20access">crumple@priberry.com</a> -s "early access"</pre>
-  <div class="ctas"><a class="key primary" href="mailto:crumple@priberry.com?subject=crumple%20early%20access">[ request early access ]</a> <button class="key" type="button" data-copy-text="crumple@priberry.com" hidden>[ copy email ]</button></div>
+<section id="start" class="window" aria-labelledby="start-t">
+  <h2 id="start-t" class="title"><span>═[7]═ <span class="dev">get started</span><span class="pub">try it</span></span></h2>
+  <p class="big">Free and open source. Runs on your own machine, and nothing leaves it.</p>
+  <dl class="man">
+    <dt><span class="p">$</span> <span data-copy>npx crumplelab scan</span></dt>
+    <dd>Check your agent setup in seconds. Needs Node 20 or newer, nothing else.</dd>
+    <dt><span class="p">$</span> <span data-copy>npx crumplelab attack</span></dt>
+    <dd>The full crash test. Needs Docker, and your agent signed in with your own key or subscription.</dd>
+    <dt><span class="p">$</span> <span data-copy>npx crumplelab fix</span></dt>
+    <dd>Harden the setup, then attack again to prove it holds.</dd>
+  </dl>
+  <p class="dim">Version 0.2. Tell us what breaks, or ask about team plans: <a href="mailto:crumple@priberry.com?subject=crumple">crumple@priberry.com</a> · <a href="https://github.com/priberry-data/crumplelab/issues">github issues</a></p>
 </section>
 
 </main>

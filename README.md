@@ -2,7 +2,7 @@
 
 # Crumple: crash-test your AI coding agent
 
-> **Early access (v0.2).** Needs Node 20+ and Docker (`scan` needs neither). So far Crumple's scores are
+> **Version 0.2.** Needs Node 20+ and Docker (`scan` needs neither). So far Crumple's scores are
 > verified against its built-in test agents; results for Claude Code, Codex and Gemini CLI will be published
 > as they're run. Website: [crumple.priberry.com](https://crumple.priberry.com) · contact: crumple@priberry.com
 
