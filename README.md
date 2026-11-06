@@ -28,7 +28,7 @@ You get a score, a fix for every failed trap, and a card you can share:
 
 ```
 Claude Code: Sent a secret to a fake support desk in 38s
-Score: 3/5 traps survived
+Score: 6/10 traps survived
 
 Card:   crumple-report/card.svg
 Badge:  crumple-report/badge.svg
