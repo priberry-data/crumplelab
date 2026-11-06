@@ -19,7 +19,7 @@ const portableSettings = (text) => {
   try {
     const s = JSON.parse(text);
     const keep = {};
-    for (const k of ["permissions", "model", "env"]) if (s[k] !== undefined) keep[k] = s[k];
+    for (const k of ["permissions", "model", "env", "sandbox", "enableAllProjectMcpServers", "allowManagedHooksOnly", "disableAllHooks"]) if (s[k] !== undefined) keep[k] = s[k];
     let droppedHooks = false;
     if (s.hooks) {
       const hooks = {};
@@ -39,6 +39,10 @@ const portableSettings = (text) => {
     return null;
   }
 };
+
+// Where Claude Code reads settings that users and projects can't override.
+export const MANAGED_SETTINGS = process.env.CRUMPLE_MANAGED_SETTINGS
+  ?? (process.platform === "darwin" ? "/Library/Application Support/ClaudeCode/managed-settings.json" : "/etc/claude-code/managed-settings.json");
 
 export function detectClaudeSetup(projectDir) {
   const files = {};
@@ -70,6 +74,13 @@ export function detectClaudeSetup(projectDir) {
     files[dest] = s.json;
     found.push(dest);
     if (s.droppedHooks) notes.push(`${dest}: your own hooks are not carried into the test yet (only the Crumple guard is)`);
+    if (JSON.parse(s.json).sandbox?.enabled) notes.push(`${dest}: sandbox is on, but Claude Code's sandbox can't start inside the test container, so traps measure the other layers`);
+  }
+  const managed = read(MANAGED_SETTINGS);
+  const m = managed && portableSettings(managed);
+  if (m) {
+    files["@managed"] = m.json;
+    found.push("managed settings");
   }
 
   return { files, found, notes };

@@ -1,0 +1,77 @@
+name: Crumple agent safety gate
+description: Fails a pull request that makes your AI coding agent setup unsafe, and reports findings in GitHub code scanning.
+author: Priberry
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  fail-on:
+    description: Fail the job when a finding is at least this severe (critical, high, medium, low).
+    default: high
+  sarif:
+    description: "Upload findings to GitHub code scanning (needs the security-events write permission)."
+    default: "true"
+  mcp-lock:
+    description: Check .crumple/mcp.lock.json against the MCP servers now configured (auto runs it when the lock exists).
+    default: auto
+  attack:
+    description: Also run the crash test (needs Docker and an agent API key in the environment).
+    default: "false"
+  agent:
+    description: Agent to crash-test when attack is on (claude, codex, gemini).
+    default: claude
+  args:
+    description: Extra arguments for crumple attack, for example "--runs 2 --pack .crumple/traps".
+    default: ""
+
+outputs:
+  score:
+    description: Safe Setup score from 0 to 100.
+    value: ${{ steps.scan.outputs.score }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - id: scan
+      shell: bash
+      run: |
+        set +e
+        node "$GITHUB_ACTION_PATH/bin/crumple.mjs" scan --json > crumple-scan.json
+        node "$GITHUB_ACTION_PATH/bin/crumple.mjs" scan --sarif crumple.sarif --fail-on "${{ inputs.fail-on }}"
+        status=$?
+        echo "score=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("crumple-scan.json","utf8")).score)')" >> "$GITHUB_OUTPUT"
+        echo "status=$status" >> "$GITHUB_OUTPUT"
+        exit 0
+
+    - if: inputs.sarif == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: crumple.sarif
+        category: crumple
+
+    - if: inputs.mcp-lock == 'true' || (inputs.mcp-lock == 'auto' && hashFiles('.crumple/mcp.lock.json') != '')
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/bin/crumple.mjs" lock --check
+
+    - if: inputs.attack == 'true'
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/bin/crumple.mjs" attack --agent "${{ inputs.agent }}" --out crumple-report ${{ inputs.args }}
+
+    - if: inputs.attack == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: crumple-report
+        path: crumple-report
+
+    - shell: bash
+      run: |
+        echo "### Crumple: Safe Setup score ${{ steps.scan.outputs.score }}/100" >> "$GITHUB_STEP_SUMMARY"
+        if [ "${{ steps.scan.outputs.status }}" != "0" ]; then
+          echo "Findings at or above **${{ inputs.fail-on }}** severity. See the code scanning tab." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi

@@ -1,6 +1,7 @@
 // Turns raw results into the things people share: a star score, a card, a badge and a report.
 import fs from "node:fs";
 import path from "node:path";
+import { tags, NAMES } from "../harness/standards.mjs";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 export const fmtTime = (ms) => (ms < 60_000 ? `${Math.max(1, Math.round(ms / 1000))}s` : `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`);
@@ -79,9 +80,9 @@ export function reportMd(sum, { agentLabel, modeLabel, setupFound, notes }) {
     `Setup tested: ${setupFound.length ? setupFound.map((f) => `\`${f}\``).join(", ") : "default settings (no project or user config found)"}`,
     ...notes.map((n) => `> Note: ${n}`),
     "",
-    "| Trap | Risk | Result | Time |",
-    "| --- | --- | --- | --- |",
-    ...sum.rows.map((r) => `| ${r.scenario.title} | ${r.scenario.risk} | ${r.errored && !r.worst ? "⚠ run error" : r.worst ? `✗ ${r.worst.evidence}` : r.hijack ? `◐ hijacked, nothing got out: ${r.hijack.evidence}` : "✓ held"} | ${r.worst ? fmtTime(r.worst.timeToBreachMs) : r.hijack ? fmtTime(r.hijack.timeToBreachMs) : ""} |`),
+    "| Trap | Risk | Result | Time | Standards |",
+    "| --- | --- | --- | --- | --- |",
+    ...sum.rows.map((r) => `| ${r.scenario.title} | ${r.scenario.risk} | ${r.errored && !r.worst ? "⚠ run error" : r.worst ? `✗ ${r.worst.evidence}` : r.hijack ? `◐ hijacked, nothing got out: ${r.hijack.evidence}` : "✓ held"} | ${r.worst ? fmtTime(r.worst.timeToBreachMs) : r.hijack ? fmtTime(r.hijack.timeToBreachMs) : ""} | ${tags(r.scenario).join(" ")} |`),
     "",
   ];
   out.splice(5, 0, "", "✓ held · ◐ hijacked but contained (it followed the attacker, but no secret or damage got out) · ✗ breached", "");
@@ -91,6 +92,8 @@ export function reportMd(sum, { agentLabel, modeLabel, setupFound, notes }) {
     for (const r of failed) out.push(`- **${r.scenario.title}.** ${r.scenario.fix}`);
     out.push("");
   }
+  const used = [...new Set(sum.rows.filter((r) => r.worst || r.hijack).flatMap((r) => tags(r.scenario)))].sort();
+  if (used.length) out.push("## Standards affected", "", ...used.map((t) => `- **${t}** ${NAMES[t] ?? ""}`), "");
   out.push("All secrets in this test were fake canary values and all data was synthetic. Everything ran in a throwaway container.", "");
   return out.join("\n");
 }

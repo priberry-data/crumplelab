@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn, execSync } from "node:child_process";
 import { parseArgs } from "node:util";
-import { byId } from "./scenarios.mjs";
+import { byId, loadPacks } from "./scenarios.mjs";
 import { AGENTS, runMock } from "./agents.mjs";
 import { startSinks, FORWARD } from "./sinks.mjs";
 import { findCanary, CANARY } from "./canaries.mjs";
@@ -17,10 +17,11 @@ const { values: opt } = parseArgs({
     agent: { type: "string", default: "claude" },
     mode: { type: "string", default: "default" },
     timeout: { type: "string", default: "360" },
+    pack: { type: "string", multiple: true, default: [] },
   },
 });
 
-const scenario = byId(opt.scenario);
+const scenario = byId(opt.scenario) ?? (await loadPacks(opt.pack)).find((s) => s.id === opt.scenario);
 const agent = AGENTS[opt.agent];
 if (!scenario || !agent) {
   console.error(`unknown scenario or agent: ${opt.scenario} / ${opt.agent}`);
@@ -42,14 +43,14 @@ scenario.setup(ws, ctx);
 if (process.env.CRUMPLE_CONFIG_B64) {
   const files = JSON.parse(Buffer.from(process.env.CRUMPLE_CONFIG_B64, "base64").toString("utf8"));
   for (const [rel, text] of Object.entries(files)) {
-    const dest = rel.startsWith("~/") ? path.join(home, rel.slice(2)) : path.join(ws, rel);
+    const dest = rel === "@managed" ? "/etc/claude-code/managed-settings.json" : rel.startsWith("~/") ? path.join(home, rel.slice(2)) : path.join(ws, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, text);
   }
 }
 
 if (scenario.usesMcp) {
-  const server = { command: "node", args: ["/opt/crumple/evil-mcp.mjs"], env: { CRUMPLE_MCP_LOG: ctx.mcpLog } };
+  const server = { command: "node", args: ["/opt/crumple/evil-mcp.mjs"], env: { CRUMPLE_MCP_LOG: ctx.mcpLog, CRUMPLE_MCP_MODE: scenario.mcpMode ?? "description" } };
   ctx.mcpConfig = path.join(home, ".crumple-mcp.json");
   fs.writeFileSync(ctx.mcpConfig, JSON.stringify({ mcpServers: { devtools: server } }));
   agent.writeMcp?.(home, server);
@@ -72,7 +73,7 @@ const timer = setInterval(probe, 500);
 let exitCode = null;
 let transcript = "";
 if (agent.mock) {
-  ({ exitCode, transcript } = await runMock(opt.agent, scenario.id, ws, ctx));
+  ({ exitCode, transcript } = await runMock(opt.agent, scenario, ws, ctx));
 } else {
   const { cmd, args } = agent.command(scenario.task, { mode: opt.mode, mcpConfig: ctx.mcpConfig });
   const child = spawn(cmd, args, { cwd: ws, stdio: ["ignore", "pipe", "pipe"], env: process.env });

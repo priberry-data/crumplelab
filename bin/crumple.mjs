@@ -3,18 +3,27 @@
 //   crumple attack   run the traps   ·   crumple fix   install safe rules and the guard   ·   crumple guard   the hook itself
 import fs from "node:fs";
 import os from "node:os";
+import crypto from "node:crypto";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import { SCENARIOS } from "../harness/scenarios.mjs";
+import { SCENARIOS, loadPacks } from "../harness/scenarios.mjs";
 import { AGENTS } from "../harness/agents.mjs";
 import { detectClaudeSetup } from "../src/detect.mjs";
 import { summarize, headline, writeReport, fmtTime } from "../src/report.mjs";
 import { applyFix } from "../src/fix.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const IMAGE = "crumplelab:dev";
+// The image is tagged with the version and a hash of everything copied into it,
+// so a changed harness always gets a fresh container and an old one is never reused by mistake.
+const IMAGE = (() => {
+  const h = crypto.createHash("sha256");
+  for (const dir of ["harness", "docker"])
+    for (const f of fs.readdirSync(path.join(ROOT, dir)).sort()) h.update(f).update(fs.readFileSync(path.join(ROOT, dir, f)));
+  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  return `crumplelab:${version}-${h.digest("hex").slice(0, 10)}`;
+})();
 
 const { values: opt, positionals } = parseArgs({
   allowPositionals: true,
@@ -28,10 +37,12 @@ const { values: opt, positionals } = parseArgs({
     timeout: { type: "string", default: "360" },
     "dry-run": { type: "boolean" },
     sandbox: { type: "boolean" },
+    managed: { type: "boolean" },
     check: { type: "boolean" },
     json: { type: "boolean" },
     sarif: { type: "string" },
     "fail-on": { type: "string" },
+    pack: { type: "string", multiple: true, default: [] },
     help: { type: "boolean", short: "h" },
   },
 });
@@ -53,6 +64,11 @@ if (positionals[0] === "guard") {
   console.log(`\n${entries} entries in ${file}`);
   console.log(brokenAt < 0 ? c.green("Hash chain intact: nothing was edited or removed.") : c.red(`Hash chain broken at entry ${brokenAt + 1}: the log was edited.`));
   if (brokenAt >= 0) process.exitCode = 1;
+} else if (positionals[0] === "list") {
+  const { tags } = await import("../harness/standards.mjs");
+  const all = [...SCENARIOS, ...(await loadPacks(opt.pack.map((p) => path.resolve(p))))];
+  for (const s of all) console.log(`${c.bold(s.id.padEnd(20))} ${s.title}${s.pack ? c.dim(` [pack: ${s.pack}]`) : ""}\n${" ".repeat(21)}${c.dim(`${s.risk} · ${tags(s).join(" ")}`)}`);
+  console.log(`\n${all.length} traps`);
 } else if (positionals[0] === "scan") {
   const { scan, toSarif, SEVERITY } = await import("../src/scan.mjs");
   const result = scan(process.cwd());
@@ -98,13 +114,26 @@ if (positionals[0] === "guard") {
   console.log(`\n${c.bold("Crumple fix")}${opt["dry-run"] ? c.dim(" (dry run, nothing written)") : ""}\n`);
   if (!changes.length) console.log(c.green("Already hardened. Nothing to change."));
   for (const ch of changes) console.log(`  ${c.green("+")} ${ch}`);
+  if (opt.managed) {
+    const { managedSettings } = await import("../src/fix.mjs");
+    const { MANAGED_SETTINGS } = await import("../src/detect.mjs");
+    // Copy the guard somewhere only an admin can change, then point managed settings at it.
+    const guardHome = process.platform === "darwin" ? "/Library/Application Support/ClaudeCode/crumple" : "/etc/claude-code/crumple";
+    const draft = path.resolve("crumple-managed-settings.json");
+    fs.writeFileSync(draft, JSON.stringify(managedSettings(path.join(guardHome, "guard.mjs")), null, 2) + "\n");
+    console.log(`\n  ${c.green("+")} ${path.basename(draft)}: managed settings that only allow your own hooks and lock the guard in place`);
+    console.log(c.dim("\n  Installing them needs an admin password, so run these yourself:"));
+    console.log(`    sudo mkdir -p "${guardHome}" && sudo cp "${path.join(ROOT, "harness")}"/{guard,shell}.mjs "${guardHome}/"`);
+    console.log(`    sudo cp "${draft}" "${MANAGED_SETTINGS}"`);
+  }
   console.log(c.dim(`\nNow run ${c.bold("crumple attack")} again to see the difference.`));
 } else {
   if (opt.help || positionals[0] !== "attack") {
     console.log(`Usage: crumple attack [options]
        crumple scan [--sarif f] [--fail-on high]   instant local audit of your agent setup (no key, no Docker)
-       crumple fix [--sandbox] [--dry-run]         harden this project's agent setup, then attack again
+       crumple fix [--sandbox] [--managed] [--dry-run]   harden this project's agent setup, then attack again
        crumple lock [--check]                      pin your MCP servers' tools; report any that change
+       crumple list [--pack dir]                   every trap, its source and the standards it maps to
        crumple audit               show the guard's recent decisions and check the log wasn't edited
 
   Crash-tests your AI coding agent setup against ${SCENARIOS.length} realistic traps,
@@ -115,6 +144,7 @@ if (positionals[0] === "guard") {
     --mode <m>          default (as shipped) | yolo (skip permissions)   (default: default)
     --runs <n>          repeats per trap; the worst run counts   (default: 1)
     --scenarios <ids>   comma list: ${SCENARIOS.map((s) => s.id).join(", ")}
+    --pack <dir>        add a folder of extra traps (repeatable)
     --out <dir>         where to write card.svg, badge.svg, report.md   (default: crumple-report)
     --parallel <n>      traps run at once   (default: 2)
 
@@ -159,7 +189,12 @@ if (positionals[0] === "guard") {
     if (b.status !== 0) process.exit(1);
   }
 
-  const scenarios = opt.scenarios ? opt.scenarios.split(",").map((id) => SCENARIOS.find((s) => s.id === id.trim())).filter(Boolean) : SCENARIOS;
+  const packDirs = opt.pack.map((p) => path.resolve(p));
+  const all = [...SCENARIOS, ...(await loadPacks(packDirs))];
+  const scenarios = opt.scenarios ? opt.scenarios.split(",").map((id) => all.find((s) => s.id === id.trim())).filter(Boolean) : all;
+  // Packs are mounted read-only and loaded by the same code inside the container.
+  const packMounts = packDirs.flatMap((d, i) => ["-v", `${d}:/opt/crumple-packs/${i}:ro`]);
+  const packArgs = packDirs.flatMap((_, i) => ["--pack", `/opt/crumple-packs/${i}`]);
   const setup = detectClaudeSetup(process.cwd());
   const configB64 = Buffer.from(JSON.stringify(setup.files)).toString("base64");
   const modeLabel = opt.mode === "yolo" ? "Hands-off mode (permissions skipped)" : "As shipped (default permissions)";
@@ -172,8 +207,8 @@ if (positionals[0] === "guard") {
   function runOne(scenario) {
     // All DNS goes to Crumple's resolver inside the container; no extra privileges, bounded resources.
     const args = ["run", "--rm", "--dns", "127.0.0.1", "--sysctl", "net.ipv4.ip_unprivileged_port_start=0",
-      "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "512", "--memory", "3g", "-e", "CRUMPLE_CONFIG_B64", ...authEnv.flatMap((k) => ["-e", k]), IMAGE,
-      "--scenario", scenario.id, "--agent", opt.agent, "--mode", opt.mode, "--timeout", opt.timeout];
+      "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "512", "--memory", "3g", ...packMounts, "-e", "CRUMPLE_CONFIG_B64", ...authEnv.flatMap((k) => ["-e", k]), IMAGE,
+      "--scenario", scenario.id, "--agent", opt.agent, "--mode", opt.mode, "--timeout", opt.timeout, ...packArgs];
     return new Promise((resolve) => {
       const child = spawn("docker", args, { env: { ...process.env, CRUMPLE_CONFIG_B64: configB64 } });
       let out = "";

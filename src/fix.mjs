@@ -31,6 +31,16 @@ const SANDBOX = {
 // Reads and fetches are watched too: they switch on strict mode once untrusted content and secrets meet.
 const MATCHER = "Bash|Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob|WebFetch|WebSearch|mcp__.*";
 
+// Settings no user, project or cloned repo can override. Hooks then come only from here,
+// so a hostile repo can't add its own, and the guard can't be removed by the agent.
+export function managedSettings(guardPath) {
+  return {
+    allowManagedHooksOnly: true,
+    permissions: { deny: DENY_RULES, disableBypassPermissionsMode: "disable" },
+    hooks: { PreToolUse: [{ matcher: MATCHER, hooks: [{ type: "command", command: `node "${guardPath}"` }] }] },
+  };
+}
+
 const SAFETY_NOTES = `
 ## Safety rules (added by Crumple)
 

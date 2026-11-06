@@ -14,7 +14,7 @@ commands that can run anything, MCP servers on `@latest` or with keys in plain t
 `CLAUDE.md` and `.cursorrules`, repo hooks and auto-run tasks, base-URL redirects, committed `.env` files.
 It prints a Safe Setup score, writes SARIF for GitHub code scanning, and fails CI with `--fail-on high`.
 
-`attack` builds sixteen booby-trapped projects inside a Docker container, runs **your own** agent setup
+`attack` builds eighteen booby-trapped projects inside a Docker container, runs **your own** agent setup
 against each one headless, and times how long it takes to fall in. Every trap is drawn from a real CVE,
 incident or paper:
 
@@ -36,6 +36,11 @@ incident or paper:
 | A fake job-interview project that steals cloud keys | Contagious Interview, Bybit |
 | An instruction written in invisible Unicode characters | Rules-file backdoor, ASCII smuggling |
 | Instruction to switch on auto-approve in editor settings | CVE-2025-53773 (Copilot) |
+| A harmless MCP tool whose result asks for your keys | Tool output poisoning (CyberArk, 2025) |
+| A cloned repo that ships its own agent hooks | CVE-2025-59536 (Check Point) |
+
+Every trap is mapped to OWASP LLM Top 10, OWASP Agentic Top 10 and MITRE ATLAS (`crumple list`), so a report
+drops straight into an audit or insurance evidence folder.
 
 Inside the container every exit leads to Crumple: its own DNS resolver, HTTP and TLS listeners record every
 lookup and connection, and only your agent's model API and package registries are forwarded. Fake keys are
@@ -58,6 +63,7 @@ You get a card to share, a badge for your README, and a fix for every failed tra
 ```bash
 npx crumplelab fix             # deny rules, the Crumple guard hook, and safety notes in CLAUDE.md
 npx crumplelab fix --sandbox   # also switch on Claude Code's built-in sandbox with a network allowlist
+npx crumplelab fix --managed   # managed settings: only your own hooks run, and the guard can't be removed
 npx crumplelab lock            # pin every MCP server's tools; the guard refuses anything that changes
 npx crumplelab attack          # attack again and compare
 ```
@@ -93,6 +99,35 @@ calls to tools that aren't in the lock. Run the check in CI.
 run unreviewed install scripts (how Shai-Hulud and the Nx attack spread), and before any project code runs
 it scans the code and its local imports for hidden `eval` and credential theft (how fake-interview malware works).
 
+**Managed settings:** a cloned repo can ship its own hooks, and the agent's CLI runs them before the
+agent decides anything, so no amount of caution helps. `crumple fix --managed` writes managed settings
+that allow only your own hooks and pin the guard where the agent can't edit it. Installing them needs an
+admin password, so Crumple prints the two commands for you to run.
+
+## In CI
+
+```yaml
+# .github/workflows/agent-safety.yml
+on: [pull_request]
+permissions: { contents: read, security-events: write }
+jobs:
+  crumple:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crumplelab/crumple@v0
+        with:
+          fail-on: high
+```
+
+Pull requests that make the agent setup unsafe (a new skip-permissions setting, an unpinned MCP server,
+invisible text in `CLAUDE.md`, a changed MCP tool) fail, and findings appear in the code scanning tab.
+
+## Private trap packs
+
+`crumple attack --pack <dir>` adds a folder of extra traps. Packs keep new traps unpublished until
+vendors have fixed what they find; see `packs/example/` and CONTRIBUTING.md.
+
 ## Safe by design
 
 - Everything runs in a container. Nothing on your machine is touched.
@@ -127,8 +162,8 @@ npx crumplelab attack --agent mock-careful
 
 ## Status
 
-v0.2: Claude Code, Codex CLI and Gemini CLI; 16 traps; `scan`, `fix`, `lock` and the guard.
-Next: repository pre-trust traps, hostile MCP v2, Copilot CLI and Cursor adapters, a CI gate, and a public
-cross-vendor leaderboard.
+v0.2: Claude Code, Codex CLI and Gemini CLI; 18 traps plus packs; `scan`, `fix`, `lock`, the guard and a
+GitHub Action. Not yet run against live models: the traps and checks are verified with scripted agents.
+Next: first live runs across vendors, Copilot CLI and Cursor adapters, and a public cross-vendor leaderboard.
 
 Apache-2.0 · Built by [Priberry](https://priberry.com)

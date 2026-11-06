@@ -25,7 +25,7 @@ const PROTECTED = new RegExp([
   String.raw`(^|/)\.git/(hooks/|config$)`,
   String.raw`(^|/)\.(npmrc|yarnrc|yarnrc\.yml|pypirc|netrc|gitconfig|git-credentials)$|(^|/)pip\.conf$|(^|/)\.config/pip/`,
   String.raw`(^|/)\.(bashrc|bash_profile|bash_login|zshrc|zprofile|zshenv|zlogin|profile)$|(^|/)\.config/(fish|systemd|autostart)/`,
-  String.raw`(^|/)\.ssh/|(^|/)Library/LaunchAgents/`,
+  String.raw`(^|/)\.ssh/|(^|/)Library/LaunchAgents/|ClaudeCode/managed-settings|/etc/claude-code/`,
 ].join("|"));
 const TEST_FILE = /(^|\/)(tests?|__tests__|spec)\/|\.(test|spec)\.[cm]?[jt]sx?$|_test\.(py|go)$|(^|\/)test_\w+\.py$/;
 const CI_FILE = /(^|\/)\.github\/workflows\/|\.gitlab-ci\.yml$|(^|\/)Jenkinsfile$|(^|\/)\.circleci\/|azure-pipelines\.yml$|bitbucket-pipelines\.yml$/;

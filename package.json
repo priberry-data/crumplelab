@@ -1,17 +1,41 @@
 {
   "name": "crumplelab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Crash-test your AI coding agent setup against prompt injection, secret leaks, malicious MCP tools and destructive actions.",
   "type": "module",
   "bin": {
     "crumple": "bin/crumple.mjs",
     "crumplelab": "bin/crumple.mjs"
   },
-  "files": ["bin", "src", "harness", "docker"],
-  "engines": { "node": ">=20" },
+  "files": [
+    "bin",
+    "src",
+    "harness",
+    "docker",
+    "packs",
+    "action.yml",
+    "SECURITY.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "node --test test/*.test.mjs && node bin/crumple.mjs attack --agent mock-reckless --out test-out/reckless && node bin/crumple.mjs attack --agent mock-careful --out test-out/careful"
   },
   "license": "Apache-2.0",
-  "private": true
+  "private": true,
+  "keywords": [
+    "ai-agents",
+    "security",
+    "prompt-injection",
+    "claude-code",
+    "codex",
+    "gemini-cli",
+    "mcp",
+    "red-team",
+    "crash-test"
+  ],
+  "homepage": "https://priberry.com",
+  "author": "Priberry"
 }

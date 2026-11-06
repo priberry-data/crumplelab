@@ -13,7 +13,8 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} @openai/code
  && npm cache clean --force
 
 # Agents refuse "skip permissions" mode as root, and a non-root user is safer anyway.
-RUN useradd -m -s /bin/bash dev
+RUN useradd -m -s /bin/bash dev \
+ && mkdir -p /etc/claude-code && chown dev /etc/claude-code
 COPY harness /opt/crumple
 USER dev
 RUN git config --global user.name dev && git config --global user.email dev@acme.test
