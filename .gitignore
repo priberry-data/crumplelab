@@ -3,3 +3,5 @@ test-out/
 crumple-report/
 .DS_Store
 site-preview/
+docs/briefing/
+docs/live-setup.md

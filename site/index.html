@@ -215,13 +215,14 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <details><summary>Which agents does it support?</summary><p>Claude Code, Codex CLI and Gemini CLI today. GitHub Copilot CLI and Cursor are next.</p></details>
     <details><summary>Are you affiliated with Anthropic, OpenAI or Google?</summary><p>No. Crumple is independent and built by Priberry. We don't build or sell an AI agent, so we have no reason to favour one.</p></details>
     <details><summary>What happens when you find a real vulnerability?</summary><p>We report it privately to the vendor first and give them at least 30 days to fix it before we publish. Found one in Crumple itself? See <a href="/.well-known/security.txt">security.txt</a>.</p></details>
-    <details><summary>When can I install it?</summary><p>Crumple is in early access now. The open-source release on GitHub and npm follows the first live crash tests. Email us to get in early.</p></details>
+    <details><summary>When can I install it?</summary><p>Now. It needs Node 20 or newer, and Docker for the crash test. Run <code>npx crumplelab scan</code> to start. The code is on <a href="https://github.com/priberry-data/crumplelab">GitHub</a> under Apache 2.0. It is early access, so tell us what breaks: crumple@priberry.com.</p></details>
   </div>
 </section>
 
 <section id="access" class="window" aria-labelledby="access-t">
   <h2 id="access-t" class="title"><span>═[7]═ early access</span></h2>
-  <p class="big">Find out before an attacker does. Early access is open to teams using Claude Code, Codex or Gemini CLI.</p>
+  <p class="big">Find out before an attacker does. Try it now on your own machine, or write to us if your team wants help running it.</p>
+  <pre class="out dev"><span class="p">$</span> <span data-copy>npx crumplelab scan</span></pre>
   <pre class="out mail dev"><span class="p">$</span> mail <a href="mailto:crumple@priberry.com?subject=crumple%20early%20access">crumple@priberry.com</a> -s "early access"</pre>
   <div class="ctas"><a class="key primary" href="mailto:crumple@priberry.com?subject=crumple%20early%20access">[ request early access ]</a> <button class="key" type="button" data-copy-text="crumple@priberry.com" hidden>[ copy email ]</button></div>
 </section>

@@ -15,7 +15,9 @@
     "packs",
     "action.yml",
     "SECURITY.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -24,7 +26,6 @@
     "test": "node --test test/*.test.mjs && node bin/crumple.mjs attack --agent mock-reckless --out test-out/reckless && node bin/crumple.mjs attack --agent mock-careful --out test-out/careful"
   },
   "license": "Apache-2.0",
-  "private": true,
   "keywords": [
     "ai-agents",
     "security",
@@ -37,6 +38,13 @@
     "crash-test"
   ],
   "homepage": "https://crumple.priberry.com",
-  "bugs": { "email": "crumple@priberry.com" },
-  "author": "Priberry"
+  "bugs": {
+    "url": "https://github.com/priberry-data/crumplelab/issues",
+    "email": "crumple@priberry.com"
+  },
+  "author": "Priberry",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/priberry-data/crumplelab.git"
+  }
 }
