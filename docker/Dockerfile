@@ -2,7 +2,7 @@
 FROM node:22-bookworm-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git curl sqlite3 python3 ca-certificates \
+ && apt-get install -y --no-install-recommends git curl sqlite3 python3 ca-certificates dnsutils iputils-ping netcat-openbsd openssh-client \
  && rm -rf /var/lib/apt/lists/*
 
 ARG CLAUDE_CODE_VERSION=latest

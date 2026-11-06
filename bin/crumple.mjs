@@ -31,7 +31,7 @@ const { values: opt, positionals } = parseArgs({
   },
 });
 
-const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
+const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0m`, yellow: (s) => `\x1b[33m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
 
 if (positionals[0] === "guard") {
   // Same guard the container uses, exposed for hooks on the user's machine.
@@ -119,7 +119,9 @@ if (positionals[0] === "guard") {
   console.log("");
 
   function runOne(scenario) {
-    const args = ["run", "--rm", "-e", "CRUMPLE_CONFIG_B64", ...authEnv.flatMap((k) => ["-e", k]), IMAGE,
+    // All DNS goes to Crumple's resolver inside the container; no extra privileges, bounded resources.
+    const args = ["run", "--rm", "--dns", "127.0.0.1", "--sysctl", "net.ipv4.ip_unprivileged_port_start=0",
+      "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "512", "--memory", "3g", "-e", "CRUMPLE_CONFIG_B64", ...authEnv.flatMap((k) => ["-e", k]), IMAGE,
       "--scenario", scenario.id, "--agent", opt.agent, "--mode", opt.mode, "--timeout", opt.timeout];
     return new Promise((resolve) => {
       const child = spawn("docker", args, { env: { ...process.env, CRUMPLE_CONFIG_B64: configB64 } });
@@ -130,7 +132,7 @@ if (positionals[0] === "guard") {
       child.on("close", () => {
         const line = out.split("\n").find((l) => l.startsWith("CRUMPLE_RESULT "));
         if (line) return resolve(JSON.parse(line.slice("CRUMPLE_RESULT ".length)));
-        resolve({ scenario: scenario.id, breached: false, error: (err || out).slice(-800) });
+        resolve({ scenario: scenario.id, breached: false, hijacked: false, error: (err || out).slice(-800) });
       });
     });
   }
@@ -143,8 +145,8 @@ if (positionals[0] === "guard") {
       const s = jobs[next++];
       const r = await runOne(s);
       results.push(r);
-      const tag = r.error ? c.red("ERROR") : r.breached ? c.red(`BREACHED in ${fmtTime(r.timeToBreachMs)}`) : c.green("held");
-      console.log(`  ${s.title.padEnd(48)} ${tag}${r.breached ? c.dim(`  ${r.evidence}`) : ""}`);
+      const tag = r.error ? c.red("ERROR") : r.breached ? c.red(`BREACHED in ${fmtTime(r.timeToBreachMs)}`) : r.hijacked ? c.yellow("hijacked, contained") : c.green("held");
+      console.log(`  ${s.title.padEnd(52)} ${tag}${r.breached || r.hijacked ? c.dim(`  ${r.evidence}`) : ""}`);
       if (r.error) console.log(c.dim(r.error.split("\n").slice(-4).join("\n")));
     }
   }
@@ -155,7 +157,7 @@ if (positionals[0] === "guard") {
   writeReport(outDir, sum, { agentLabel: agent.label, modeLabel, setupFound: setup.found, notes: setup.notes }, results);
 
   console.log(`\n${c.bold(headline(sum, agent.label))}`);
-  console.log(`Score: ${sum.survived}/${sum.total} traps survived\n`);
+  console.log(`Score: ${sum.survived}/${sum.total} traps survived${sum.hijacked ? ` · ${sum.hijacked} hijacked but contained` : ""}\n`);
   console.log(c.dim(`Card:   ${path.join(outDir, "card.svg")}`));
   console.log(c.dim(`Badge:  ${path.join(outDir, "badge.svg")}`));
   console.log(c.dim(`Report: ${path.join(outDir, "report.md")}`));

