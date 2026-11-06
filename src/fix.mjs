@@ -10,7 +10,14 @@ const DENY_RULES = [
   "Write(.claude/**)",
   "Edit(.mcp.json)",
   "Write(.mcp.json)",
+  "Read(~/.ssh/**)",
+  "Read(~/.aws/**)",
+  "Edit(.git/hooks/**)",
+  "Write(.git/hooks/**)",
 ];
+
+// Reads and fetches are watched too: they switch on strict mode once untrusted content and secrets meet.
+const MATCHER = "Bash|Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob|WebFetch|WebSearch|mcp__.*";
 
 const SAFETY_NOTES = `
 ## Safety rules (added by Crumple)
@@ -36,15 +43,18 @@ export function applyFix(projectDir, guardPath, { dryRun = false } = {}) {
   const added = DENY_RULES.filter((r) => !deny.has(r));
   added.forEach((r) => deny.add(r));
   settings.permissions.deny = [...deny];
-  if (added.length) changes.push(`.claude/settings.json: added ${added.length} deny rules (force-push, self-editing settings)`);
+  if (added.length) changes.push(`.claude/settings.json: added ${added.length} deny rules (force-push, self-editing settings, git hooks, cloud keys)`);
 
   const command = `node "${guardPath}"`;
   settings.hooks ??= {};
   settings.hooks.PreToolUse ??= [];
-  const hasGuard = JSON.stringify(settings.hooks.PreToolUse).includes("guard.mjs");
-  if (!hasGuard) {
-    settings.hooks.PreToolUse.push({ matcher: "Bash|Write|Edit|MultiEdit|mcp__.*", hooks: [{ type: "command", command }] });
-    changes.push(".claude/settings.json: installed the Crumple guard hook (checks every command, edit and MCP call)");
+  const existing = settings.hooks.PreToolUse.find((h) => JSON.stringify(h).includes("guard.mjs"));
+  if (!existing) {
+    settings.hooks.PreToolUse.push({ matcher: MATCHER, hooks: [{ type: "command", command }] });
+    changes.push(".claude/settings.json: installed the Crumple guard hook (checks every command, edit, read, fetch and MCP call)");
+  } else if (existing.matcher !== MATCHER) {
+    existing.matcher = MATCHER;
+    changes.push(".claude/settings.json: the Crumple guard now also watches reads and web fetches (strict mode)");
   }
 
   const mdPath = path.join(projectDir, "CLAUDE.md");

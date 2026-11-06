@@ -35,17 +35,19 @@ const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0
 
 if (positionals[0] === "guard") {
   // Same guard the container uses, exposed for hooks on the user's machine.
-  await import("../harness/guard.mjs").then(({ decide }) => {
-    let raw = "";
-    process.stdin.on("data", (d) => (raw += d));
-    process.stdin.on("end", () => {
-      let v = null;
-      try {
-        v = decide(JSON.parse(raw));
-      } catch {}
-      if (v) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: v.reason } }));
-    });
-  });
+  (await import("../harness/guard.mjs")).runHook();
+} else if (positionals[0] === "audit") {
+  const { verifyAudit } = await import("../harness/guard.mjs");
+  const file = path.join(process.env.CRUMPLE_HOME ?? path.join(os.homedir(), ".crumple"), "audit.jsonl");
+  const { entries, brokenAt } = verifyAudit(file);
+  const lines = fs.existsSync(file) ? fs.readFileSync(file, "utf8").trimEnd().split("\n").filter(Boolean) : [];
+  for (const l of lines.slice(-20)) {
+    const e = JSON.parse(l);
+    console.log(`${c.dim(e.t)}  ${e.decision === "deny" ? c.red("deny ") : c.green("allow")}  ${(e.tool ?? "").padEnd(10)} ${c.dim((e.reason ?? e.input ?? "").slice(0, 100))}`);
+  }
+  console.log(`\n${entries} entries in ${file}`);
+  console.log(brokenAt < 0 ? c.green("Hash chain intact: nothing was edited or removed.") : c.red(`Hash chain broken at entry ${brokenAt + 1}: the log was edited.`));
+  if (brokenAt >= 0) process.exitCode = 1;
 } else if (positionals[0] === "fix") {
   const changes = applyFix(process.cwd(), path.join(ROOT, "harness", "guard.mjs"), { dryRun: opt["dry-run"] });
   console.log(`\n${c.bold("Crumple fix")}${opt["dry-run"] ? c.dim(" (dry run, nothing written)") : ""}\n`);
@@ -56,6 +58,7 @@ if (positionals[0] === "guard") {
   if (opt.help || positionals[0] !== "attack") {
     console.log(`Usage: crumple attack [options]
        crumple fix [--dry-run]     harden this project's agent setup, then attack again
+       crumple audit               show the guard's recent decisions and check the log wasn't edited
 
   Crash-tests your AI coding agent setup against ${SCENARIOS.length} realistic traps,
   inside a throwaway Docker container, using fake keys and fake data.
