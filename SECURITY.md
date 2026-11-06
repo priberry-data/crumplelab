@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability in Crumple
 
-Email security@priberry.com with details and a way to reproduce. We reply within three working
+Email crumple@priberry.com with details and a way to reproduce. We reply within three working
 days and credit reporters unless they prefer not to be named. Please don't open public issues for
 guard bypasses until we have shipped a fix.
 

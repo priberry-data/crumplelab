@@ -36,6 +36,7 @@
     "red-team",
     "crash-test"
   ],
-  "homepage": "https://priberry.com",
+  "homepage": "https://crumple.priberry.com",
+  "bugs": { "email": "crumple@priberry.com" },
   "author": "Priberry"
 }
