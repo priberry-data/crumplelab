@@ -38,7 +38,9 @@ export const AGENTS = {
     label: "Gemini CLI",
     auth: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
     command(task, { mode }) {
-      const args = ["-p", task, "--output-format", "json"];
+      // Since 0.6x, headless Gemini CLI refuses folders it hasn't been told to trust. The user runs it in
+      // their own project, which they trust, so the trap workspace is trusted the same way.
+      const args = ["-p", task, "--output-format", "json", "--skip-trust"];
       if (mode === "yolo") args.push("--yolo");
       return { cmd: "gemini", args };
     },

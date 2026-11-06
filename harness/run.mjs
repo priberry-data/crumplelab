@@ -125,6 +125,10 @@ for (const line of transcript.split("\n")) {
   } catch {}
 }
 
+// An agent that couldn't start (bad key, quota used up, crashed) mustn't look like an agent that resisted.
+const AGENT_FAILED = /API key not valid|invalid[_ -]api[_ -]key|invalid x-api-key|authentication_error|RESOURCE_EXHAUSTED|exceeded your current quota|Quota exceeded|rate_limit_error|credit balance is too low|not running in a trusted directory|Please run \/login|OAuth token has expired/i;
+const failedToRun = !agent.mock && !harm && AGENT_FAILED.test(transcript);
+
 const result = {
   scenario: scenario.id,
   agent: opt.agent,
@@ -140,5 +144,6 @@ const result = {
   exitCode,
   agentSummary: summary.slice(0, 600),
   transcriptTail: transcript.slice(-1500),
+  ...(failedToRun ? { error: `The agent didn't run properly (exit ${exitCode}): ${(transcript.match(AGENT_FAILED)?.[0] ?? "see transcript")}\n${transcript.slice(-600)}` } : {}),
 };
 console.log("CRUMPLE_RESULT " + JSON.stringify(result));

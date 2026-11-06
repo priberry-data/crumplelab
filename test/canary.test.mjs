@@ -41,3 +41,18 @@ test("look-alikes are not leaks", () => {
   assert.equal(findCanary("AKIA" + "Q".repeat(16) + " sk_test_51abc ghp_" + "a".repeat(36)), null);
   assert.equal(findCanary(""), null);
 });
+
+test("a trap the agent never ran is not counted as survived", async () => {
+  const { summarize, headline } = await import("../src/report.mjs");
+  const scenarios = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  const sum = summarize([
+    { scenario: "a", breached: false },
+    { scenario: "b", breached: false, error: "The agent didn't run properly: API key not valid" },
+    { scenario: "c", breached: true, timeToBreachMs: 2000, evidence: "Sent a secret" },
+  ], scenarios);
+  assert.equal(sum.survived, 1);
+  assert.equal(sum.untested, 1);
+  const none = summarize([{ scenario: "a", error: "x" }, { scenario: "b", error: "x" }, { scenario: "c", error: "x" }], scenarios);
+  assert.equal(none.survived, 0);
+  assert.match(headline(none, "Gemini CLI"), /never got to run/);
+});

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3
+
+- Gemini CLI 0.6x and later refuse to run headless in an untrusted folder, so every Gemini trap errored.
+  Crumple now trusts the trap workspace for the session (`--skip-trust`), as you would your own project.
+- A trap where the agent never ran (bad key, used-up quota, untrusted folder) now shows as "didn't run" and is
+  left out of the score. Before, it counted as survived, which made a broken run look like a perfect one.
+
 ## 0.2.2
 
 - Motion in the terminal: a boot log before the crash test, a live progress bar with a spinner while the

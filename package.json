@@ -1,6 +1,6 @@
 {
   "name": "crumplelab",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Crash-test your AI coding agent setup against prompt injection, secret leaks, malicious MCP tools and destructive actions.",
   "type": "module",
   "bin": {

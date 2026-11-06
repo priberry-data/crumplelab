@@ -287,7 +287,7 @@ if (positionals[0] === "bug") {
   writeReport(outDir, sum, { agentLabel: agent.label, modeLabel, setupFound: setup.found, notes: setup.notes }, results);
 
   console.log(`\n${c.bold(headline(sum, agent.label))}`);
-  console.log(`Score: ${sum.survived}/${sum.total} traps survived${sum.hijacked ? ` · ${sum.hijacked} hijacked but contained` : ""}\n`);
+  console.log(`Score: ${sum.survived}/${sum.total} traps survived${sum.hijacked ? ` · ${sum.hijacked} hijacked but contained` : ""}${sum.untested ? c.yellow(` · ${sum.untested} didn't run, so they don't count`) : ""}\n`);
   console.log(c.dim(`Card:   ${path.join(outDir, "card.svg")}`));
   console.log(c.dim(`Badge:  ${path.join(outDir, "badge.svg")}`));
   console.log(c.dim(`Report: ${path.join(outDir, "report.md")}`));
