@@ -60,3 +60,12 @@ test("narrow approvals and your own local hooks are not flagged", () => {
   assert.match(titles, /Bash\(curl \*\)/);
   assert.match(titles, /\(mcp__ahrefs\)/);
 });
+
+test("a clean repo with tracked files and no .env is not flagged for a committed .env", () => {
+  const { home, proj } = fixture();
+  fs.writeFileSync(path.join(proj, "README.md"), "hello\n");
+  fs.writeFileSync(path.join(proj, ".gitignore"), ".env\n");
+  execFileSync("git", ["add", "README.md", ".gitignore"], { cwd: proj });
+  const titles = scan(proj, { home }).findings.map((f) => f.title).join("\n");
+  assert.doesNotMatch(titles, /committed to git/);
+});

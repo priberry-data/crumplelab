@@ -1,0 +1,10 @@
+{
+  "name": "crumple",
+  "version": "0.2.4",
+  "description": "Find out whether your AI coding agent can be hijacked, and harden it. Local scan, no key, nothing leaves the machine.",
+  "author": { "name": "Priberry", "email": "crumple@priberry.com", "url": "https://priberry.com" },
+  "homepage": "https://crumple.priberry.com",
+  "repository": "https://github.com/priberry-data/crumplelab",
+  "license": "Apache-2.0",
+  "keywords": ["security", "prompt-injection", "mcp", "agents"]
+}

@@ -1,6 +1,6 @@
 {
   "name": "crumplelab",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Crash-test your AI coding agent setup against prompt injection, secret leaks, malicious MCP tools and destructive actions.",
   "type": "module",
   "bin": {
@@ -17,7 +17,10 @@
     "SECURITY.md",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skills",
+    ".claude-plugin",
+    ".mcp.json"
   ],
   "engines": {
     "node": ">=20"

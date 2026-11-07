@@ -122,8 +122,9 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
   // --- secrets within reach ----------------------------------------------------------------------
   const envFiles = fs.existsSync(projectDir) ? fs.readdirSync(projectDir).filter((f) => /^\.env(\.(local|prod\w*|dev\w*|staging))?$/.test(f)) : [];
   let tracked = [];
-  try {
-    tracked = execFileSync("git", ["ls-files", ...envFiles], { cwd: projectDir, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\n").filter(Boolean);
+  // With no names given, `git ls-files` lists every tracked file, so only ask when there is a .env to ask about.
+  if (envFiles.length) try {
+    tracked = execFileSync("git", ["ls-files", "--", ...envFiles], { cwd: projectDir, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\n").filter(Boolean);
   } catch {}
   for (const f of tracked) add("critical", f, "A .env file is committed to git", "Everyone with the repo, and every agent that reads history, has these keys.", "Remove it from git history and rotate every key in it.");
   if (envFiles.length && !denyEnv) add("medium", envFiles.join(", "), "The agent can read your .env", "Most real agent leaks start with the agent reading .env and sending it somewhere.", 'Add "Read(.env*)" to permissions.deny, and give the agent test keys instead of real ones.');

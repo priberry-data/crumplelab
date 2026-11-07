@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.4
+
+- **Fix:** `crumple scan` flagged every tracked file as "a .env file is committed to git" in any repo without a
+  `.env`, which scored most clean repos 0/F. It now only checks when a `.env` exists.
+- `crumple mcp`: Crumple as an MCP server (stdio) with the scan and the trap list, for any agent or editor.
+- Skills for Claude Code and Codex (`skills/crumple/SKILL.md`), and a Claude Code plugin and marketplace
+  (`/plugin marketplace add priberry-data/crumplelab`).
+
 ## 0.2.3
 
 - Gemini CLI 0.6x and later refuse to run headless in an untrusted folder, so every Gemini trap errored.

@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "crumple": { "command": "npx", "args": ["-y", "crumplelab", "mcp"] }
+  }
+}

@@ -61,9 +61,12 @@ process.on("unhandledRejection", crashed);
 const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0m`, yellow: (s) => `\x1b[33m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
 
 // The guard speaks JSON to the agent over stdout, so it (and any machine-readable output) never gets the banner.
-if (!["guard", "audit"].includes(positionals[0]) && !opt.json) process.stdout.write(banner({ version: VERSION, tagline: "the crash test for AI coding agents" }));
+if (!["guard", "audit", "mcp"].includes(positionals[0]) && !opt.json) process.stdout.write(banner({ version: VERSION, tagline: "the crash test for AI coding agents" }));
 
-if (positionals[0] === "bug") {
+if (positionals[0] === "mcp") {
+  // MCP over stdio: the scan and the trap list, for any agent or editor that speaks MCP.
+  await (await import("../src/mcp.mjs")).serve({ version: VERSION });
+} else if (positionals[0] === "bug") {
   // Everything a bug report needs, and the link to file one. Nothing is sent.
   console.log(`\n${c.bold("Report a bug")}\n\n${diagnostics({ version: VERSION, command: "bug" })}\n`);
   console.log(`Open this link to file it on GitHub (pre-filled, you can edit it first):\n${issueUrl({ version: VERSION, command: "crumple bug" })}\n`);
@@ -159,6 +162,7 @@ if (positionals[0] === "bug") {
        crumple list [--pack dir]                   every trap, its source and the standards it maps to
        crumple audit               show the guard's recent decisions and check the log wasn't edited
        crumple bug                 report a problem with Crumple (pre-filled, nothing is sent)
+       crumple mcp                 run as an MCP server (stdio): scan and trap list for any agent
 
   Crash-tests your AI coding agent setup against ${SCENARIOS.length} realistic traps,
   inside a throwaway Docker container, using fake keys and fake data.

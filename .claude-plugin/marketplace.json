@@ -1,0 +1,8 @@
+{
+  "name": "priberry",
+  "owner": { "name": "Priberry", "email": "hello@priberry.com" },
+  "plugins": [
+    { "name": "crumple", "source": "./", "description": "The crash test for AI coding agents: scan, harden, prove." },
+    { "name": "tare", "source": { "source": "github", "repo": "priberry-data/tarelab" }, "description": "Where your agent's tokens go, the fixes, and the receipt." }
+  ]
+}
