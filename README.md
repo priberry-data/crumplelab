@@ -132,6 +132,16 @@ jobs:
 Pull requests that make the agent setup unsafe (a new skip-permissions setting, an unpinned MCP server,
 invisible text in `CLAUDE.md`, a changed MCP tool) fail, and findings appear in the code scanning tab.
 
+## In your agent
+
+- **Claude Code plugin:** `/plugin marketplace add priberry-data/crumplelab`, then `/plugin install crumple@priberry`
+  (or in one step: `/plugin install crumple --marketplace priberry-data/crumplelab`). Adds the skill and the MCP server;
+  ask "is my agent setup safe?"
+- **Skill (Claude Code or Codex):** copy `skills/crumple` into `~/.claude/skills/` or `~/.codex/skills/`.
+- **MCP server (any agent):** `{"command": "npx", "args": ["-y", "crumplelab", "mcp"]}`. Tools: `crumple_scan`
+  (the setup scan, local and instant) and `crumple_traps`. The full crash test spends API credit, so it stays a
+  command you run on purpose.
+
 ## Private trap packs
 
 `crumple attack --pack <dir>` adds a folder of extra traps. Packs keep new traps unpublished until

@@ -28,7 +28,9 @@ const IMAGE = (() => {
   return `crumplelab:${VERSION}-${h.digest("hex").slice(0, 10)}`;
 })();
 
-const { values: opt, positionals } = parseArgs({
+let parsed;
+try {
+  parsed = parseArgs({
   allowPositionals: true,
   options: {
     agent: { type: "string", default: "claude" },
@@ -47,8 +49,18 @@ const { values: opt, positionals } = parseArgs({
     "fail-on": { type: "string" },
     pack: { type: "string", multiple: true, default: [] },
     help: { type: "boolean", short: "h" },
+    version: { type: "boolean", short: "v" },
   },
-});
+  });
+} catch (e) {
+  console.error(`crumple: ${e.message}\nRun \`npx crumplelab --help\` for the commands and options.`);
+  process.exit(2);
+}
+const { values: opt, positionals } = parsed;
+if (opt.version) {
+  console.log(VERSION);
+  process.exit(0);
+}
 
 // If Crumple itself breaks, say so plainly and hand the user a ready-made bug report. Nothing is sent.
 const crashed = (e) => {
