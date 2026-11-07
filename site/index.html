@@ -31,7 +31,7 @@
 <a class="skip" href="#main">skip to content</a>
 
 <header class="bar" role="banner">
-  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.2.3</span></a>
+  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.2.4</span></a>
   <nav aria-label="Sections">
     <a href="#how"><kbd>1</kbd>how</a>
     <a href="#traps"><kbd>2</kbd>traps</a>
@@ -52,7 +52,7 @@
 <main id="main">
 
 <section class="hero" aria-labelledby="hero-title">
-  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.2.3 · (c) 2026 priberry
+  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.2.4 · (c) 2026 priberry
 memory test ............ 640K ok
 sandbox ................ ok<span class="x">  docker · cap-drop ALL · no-new-privileges</span>
 traps .................. 18 armed
@@ -231,13 +231,22 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <dt><span class="p">$</span> <span data-copy>npx crumplelab fix</span></dt>
     <dd>Harden the setup, then attack again to prove it holds.</dd>
   </dl>
+  <h3 class="sub">Inside your agent</h3>
+  <dl class="man">
+    <dt>Claude Code plugin</dt>
+    <dd><code data-copy>/plugin marketplace add priberry-data/crumplelab</code>, then <code>/plugin install crumple@priberry</code>. Adds the skill and the MCP server; ask "is my agent setup safe?"</dd>
+    <dt>Skill (Claude Code or Codex)</dt>
+    <dd>Copy <code>skills/crumple</code> from the repo into <code>~/.claude/skills/</code> or <code>~/.codex/skills/</code>.</dd>
+    <dt>MCP server (any agent)</dt>
+    <dd><code data-copy>npx -y crumplelab mcp</code> over stdio. Tools: <code>crumple_scan</code> (the setup scan, instant and local) and <code>crumple_traps</code>. The crash test itself spends API credit, so it stays a command you run on purpose.</dd>
+  </dl>
   <p class="dim">Version 0.2. Tell us what breaks, or ask about team plans: <a href="mailto:crumple@priberry.com?subject=crumple">crumple@priberry.com</a> · <a href="https://github.com/priberry-data/crumplelab/issues">github issues</a></p>
 </section>
 
 </main>
 
 <footer class="bar foot">
-  <span>© 2026 <a href="https://priberry.com">priberry</a> · crumple is built by priberry</span>
+  <span>© 2026 <a href="https://priberry.com">priberry</a> · crumple is built by priberry · also: <a href="https://tare.priberry.com">tare</a>, what your agent wastes</span>
   <span><a href="mailto:crumple@priberry.com">crumple@priberry.com</a> · <a href="/.well-known/security.txt">security.txt</a> · <a href="/llms.txt">llms.txt</a> · <a href="https://priberry.com/privacy/">privacy</a></span>
   <span class="dim">no cookies · no trackers · no third-party requests</span>
   <span class="dim legal">Claude Code, Codex and Gemini CLI are trademarks of their owners. Crumple is independent and not affiliated with Anthropic, OpenAI or Google.</span>
