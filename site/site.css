@@ -196,7 +196,7 @@ h3.sub{margin-top:8px}
   html{scroll-padding-top:92px}
   header.bar{flex-wrap:wrap;height:auto;padding:8px 16px 0;gap:0 12px}
   .right{margin-left:auto}
-  nav{order:3;flex-basis:100%;gap:18px;overflow-x:auto;padding:8px 0 9px;margin-top:6px;border-top:1px solid var(--line);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  nav{order:3;flex-basis:100%;gap:10px;justify-content:space-between;overflow-x:auto;padding:8px 0 9px;margin-top:6px;border-top:1px solid var(--line);scrollbar-width:none;-webkit-overflow-scrolling:touch}
   nav::-webkit-scrollbar{display:none}
   nav a{font-size:13.5px}
   nav a kbd{display:none}
