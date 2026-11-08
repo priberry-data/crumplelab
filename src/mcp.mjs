@@ -15,7 +15,7 @@ const TOOLS = [
   },
   {
     name: "crumple_site",
-    description: "Check a deployed web app (built with Lovable, Bolt, v0, Replit, Emergent or by hand) for secret keys shipped in its JavaScript, a Supabase service_role key in the browser, and public source maps. Reads only what the site serves to every visitor. The Supabase table check needs the owner, so run `npx crumplelab site <url> --mine` for that.",
+    description: "Grade a deployed web app (built with Lovable, Bolt, v0, Replit, Emergent or by hand) A to F for what a stranger can use against it: secret keys shipped in its JavaScript, a Supabase service_role key in the browser, public source maps, no Content-Security-Policy. Each finding has a plain-English reason, what the owner must do by hand (like revoking a key), and a fix `prompt` to apply in the app's code. Call it again after fixing: `change` lists what got fixed. Reads only what the site serves to every visitor. Database checks (which Supabase tables or Firebase data anyone can read) need the owner, so tell them to run `npx crumplelab site <url> --mine` themselves.",
     inputSchema: { type: "object", properties: { url: { type: "string", description: "The app's address, for example myapp.lovable.app" } }, required: ["url"], additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: true },
   },
@@ -27,12 +27,21 @@ const TOOLS = [
   },
 ];
 
+const lastSite = new Map();
+
 async function call(name, args = {}) {
   if (name === "crumple_scan") {
     const dir = path.resolve(args.path || process.cwd());
     return { project: dir, ...scan(dir), next: "Run `npx crumplelab fix` to harden, then `npx crumplelab attack` to prove it (needs Docker and an API key)." };
   }
-  if (name === "crumple_site") return (await import("./site.mjs")).siteScan(args.url, { mine: false });
+  if (name === "crumple_site") {
+    const { siteScan, compare } = await import("./site.mjs");
+    const result = await siteScan(args.url, { mine: false });
+    // Remembered for this session only, so a second call shows what the fixes changed.
+    const change = compare(lastSite.get(result.url), result);
+    lastSite.set(result.url, { at: new Date().toISOString(), score: result.score, grade: result.grade, findings: result.findings.map(({ id, severity, title }) => ({ id, severity, title })) });
+    return { ...result, change };
+  }
   if (name === "crumple_traps") return { traps: SCENARIOS.map((s) => ({ id: s.id, title: s.title, risk: s.risk })) };
   throw new Error(`unknown tool ${name}`);
 }

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- `crumple site` is now a grade anyone can finish without reading code. Each finding says why it matters in
+  plain words, what to do by hand first (like revoking a leaked key), and gives a fix prompt to paste into the
+  app builder. It names the builder when it can tell (Lovable, Bolt, Replit, Emergent, Base44, v0).
+- Re-check: run the same command again and it shows the old grade, the new one, and what got fixed. Only ids,
+  titles and scores are kept, in `~/.crumple/sites`; never keys or data.
+- `--prompt N` prints one fix prompt on its own, ready for the clipboard.
+- `--mine` now checks Firebase too: whether the Realtime Database is open (top-level names only, counted and
+  dropped) and whether common Firestore collections are readable (one document name, no fields).
+- A table anyone can read is critical when it holds people (users, profiles, orders, messages); otherwise it is
+  medium, with a prompt that keeps a public list readable but locks writes.
+- Supabase's newer `sb_publishable_` keys are recognised. A CSP set in a `<meta>` tag counts.
+- The `crumple_site` MCP tool returns the prompts, and `change` on a second call in the same session.
+
 ## 0.3.0
 
 - `crumple site <url>`: checks a deployed app (Lovable, Bolt, v0, Replit, Emergent or hand-built) for secret keys

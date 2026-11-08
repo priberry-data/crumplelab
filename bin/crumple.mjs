@@ -51,6 +51,7 @@ try {
     help: { type: "boolean", short: "h" },
     version: { type: "boolean", short: "v" },
     mine: { type: "boolean" },
+    prompt: { type: "string" },
     undo: { type: "boolean" },
   },
   });
@@ -76,7 +77,7 @@ const SEVERITY_OF = (s) => ({ critical: 40, high: 15, medium: 5, low: 1 })[s] ??
 const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0m`, yellow: (s) => `\x1b[33m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
 
 // The guard speaks JSON to the agent over stdout, so it (and any machine-readable output) never gets the banner.
-if (!["guard", "audit", "mcp"].includes(positionals[0]) && !opt.json) process.stdout.write(banner({ version: VERSION, tagline: "the crash test for AI coding agents" }));
+if (!["guard", "audit", "mcp"].includes(positionals[0]) && !opt.json && !opt.prompt) process.stdout.write(banner({ version: VERSION, tagline: "the crash test for AI coding agents" }));
 
 if (positionals[0] === "mcp") {
   // MCP over stdio: the scan and the trap list, for any agent or editor that speaks MCP.
@@ -135,30 +136,31 @@ if (positionals[0] === "mcp") {
   console.log(renderSetup(rows, { name: "Crumple", undo: opt.undo, dryRun: opt["dry-run"], color: Boolean(process.stdout.isTTY && !process.env.NO_COLOR) }));
 } else if (positionals[0] === "site") {
   if (!positionals[1]) {
-    console.error("Usage: npx crumplelab site <url> [--mine]   checks a deployed app (Lovable, Bolt, v0, Replit, any site)");
+    console.error("Usage: npx crumplelab site <url> [--mine] [--prompt N] [--json]   checks a deployed app (Lovable, Bolt, v0, Replit, Emergent, any site)");
     process.exit(2);
   }
-  const { siteScan } = await import("../src/site.mjs");
+  const { siteScan, loadLast, saveRun, compare, renderSite } = await import("../src/site.mjs");
   const run = () => siteScan(positionals[1], { mine: opt.mine });
   let result;
   try {
-    result = opt.json ? await run() : await spin(`looking at ${positionals[1]} the way a stranger would`, run);
+    result = opt.json || opt.prompt ? await run() : await spin(`looking at ${positionals[1]} the way a stranger would`, run);
   } catch (e) {
     console.error(c.red(`crumple: ${e.message}`));
     process.exit(1);
   }
-  if (opt.json) console.log(JSON.stringify(result, null, 2));
-  else {
-    const col = { critical: c.red, high: c.red, medium: c.yellow, low: c.dim };
-    console.log(`\n${c.bold("Crumple site check")} · ${result.url} · ${result.scripts} scripts read${result.supabase ? " · Supabase app" : ""}\n`);
-    if (!result.findings.length) console.log(c.green("Nothing found.\n"));
-    for (const f of result.findings) {
-      console.log(`${col[f.severity](f.severity.toUpperCase().padEnd(8))} ${c.bold(f.title)} ${c.dim(`(${f.where})`)}`);
-      console.log(`         ${f.why}`);
-      console.log(`         ${c.green("Fix:")} ${f.fix}\n`);
+  if (opt.prompt) {
+    // Just one fix prompt, plain, so it can go straight to the clipboard.
+    const p = result.findings.filter((f) => f.prompt)[Number(opt.prompt) - 1];
+    if (!p) {
+      console.error(`crumple: there is no fix prompt ${opt.prompt}; this check has ${result.findings.filter((f) => f.prompt).length}.`);
+      process.exit(2);
     }
-    const color = result.score >= 75 ? c.green : result.score >= 55 ? c.yellow : c.red;
-    console.log(`Site score: ${color(`${result.score}/100 (${result.grade})`)} · read only what the site serves to every visitor${opt.mine ? "; database checked with counts only, no rows" : ""}`);
+    console.log(p.prompt);
+  } else {
+    const change = compare(loadLast(result.url, result.mine), result);
+    saveRun(result);
+    if (opt.json) console.log(JSON.stringify({ ...result, change }, null, 2));
+    else console.log(renderSite(result, change, { color: Boolean(process.stdout.isTTY && !process.env.NO_COLOR) }));
   }
   if (opt["fail-on"] && result.findings.some((f) => SEVERITY_OF(f.severity) >= SEVERITY_OF(opt["fail-on"]))) process.exitCode = 1;
 } else if (positionals[0] === "lock") {
@@ -205,7 +207,7 @@ if (positionals[0] === "mcp") {
     console.log(`Usage: crumple attack [options]
        crumple scan [--sarif f] [--fail-on high]   instant local audit of your agent setup (no key, no Docker)
        crumple setup [--dry-run] [--undo]       add Crumple to every AI coding app here (Cursor, VS Code, Windsurf, Claude, Codex, Gemini CLI, Cline, Kiro…)
-       crumple site <url> [--mine]               check a deployed app (Lovable, Bolt, v0, Replit, any site) for leaked keys and open data
+       crumple site <url> [--mine] [--prompt N]  grade a deployed app (Lovable, Bolt, v0, Replit, Emergent, any site): leaked keys, open data, fix prompts
        crumple fix [--sandbox] [--managed] [--dry-run]   harden this project's agent setup, then attack again
        crumple lock [--check]                      pin your MCP servers' tools; report any that change
        crumple list [--pack dir]                   every trap, its source and the standards it maps to

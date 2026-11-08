@@ -79,8 +79,14 @@ most often are visible to anyone who opens the site.
 
 ```bash
 npx crumplelab site myapp.lovable.app          # what every visitor can see
-npx crumplelab site myapp.lovable.app --mine   # also: which Supabase tables anyone can read
+npx crumplelab site myapp.lovable.app --mine   # also: which Supabase tables or Firebase data anyone can read
+npx crumplelab site myapp.lovable.app --prompt 1 | pbcopy   # copy fix prompt 1
 ```
+
+You get a grade from A to F and, for each problem, what it means in plain words, what to do by hand first
+(revoking a leaked key is something no AI builder can do for you), and a prompt to paste into Lovable, Bolt,
+Replit or whichever tool built the app. Run the same command again after the fix is live: it shows the old
+grade, the new one, and what got fixed.
 
 `site` reads the page and the JavaScript it serves, the way a curious stranger would, and looks for:
 
@@ -92,7 +98,8 @@ npx crumplelab site myapp.lovable.app --mine   # also: which Supabase tables any
 
 With `--mine`, for an app you own, it takes the public Supabase anon key the app already ships and asks the
 database which tables anyone can read. It sends `HEAD` requests with `count=exact`, so Postgres returns a row
-count and never a row. Tables of people (users, profiles, orders, messages) are marked critical, and each
+count and never a row. For Firebase it checks whether the Realtime Database is open (top-level names only) and
+whether common Firestore collections are readable (one document name, no fields). Tables of people (users, profiles, orders, messages) are marked critical, and each
 finding says which switch to flip in Supabase.
 
 ## Fix it
