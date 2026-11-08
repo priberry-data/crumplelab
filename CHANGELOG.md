@@ -13,6 +13,8 @@
 - A table anyone can read is critical when it holds people (users, profiles, orders, messages); otherwise it is
   medium, with a prompt that keeps a public list readable but locks writes.
 - Supabase's newer `sb_publishable_` keys are recognised. A CSP set in a `<meta>` tag counts.
+- `scan` flags a pre-approved code-running MCP tool (`execute`, `run_code`, `execute_sql` and the like). With
+  "code mode" servers, one such tool reaches a whole API, so approving it approves everything its token can do.
 - The `crumple_site` MCP tool returns the prompts, and `change` on a second call in the same session.
 
 ## 0.3.0

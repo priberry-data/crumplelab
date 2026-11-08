@@ -61,6 +61,15 @@ test("narrow approvals and your own local hooks are not flagged", () => {
   assert.match(titles, /\(mcp__ahrefs\)/);
 });
 
+test("a pre-approved code-running MCP tool is flagged, since it approves the whole API", () => {
+  const { home, proj } = fixture();
+  fs.writeFileSync(path.join(proj, ".claude/settings.local.json"), JSON.stringify({ permissions: { allow: ["mcp__cloudflare__execute", "mcp__cloudflare__search", "mcp__db__execute_sql"] } }));
+  const titles = scan(proj, { home }).findings.map((f) => f.title).join("\n");
+  assert.match(titles, /code-running MCP tool is pre-approved \(mcp__cloudflare__execute\)/);
+  assert.match(titles, /\(mcp__db__execute_sql\)/);
+  assert.doesNotMatch(titles, /mcp__cloudflare__search/, "a search tool is a narrow approval");
+});
+
 test("a clean repo with tracked files and no .env is not flagged for a committed .env", () => {
   const { home, proj } = fixture();
   fs.writeFileSync(path.join(proj, "README.md"), "hello\n");
