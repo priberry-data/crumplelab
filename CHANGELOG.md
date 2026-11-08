@@ -2,6 +2,9 @@
 
 ## 0.3.2
 
+- Web check at crumple.priberry.com/check: paste an app's address and get the grade, reasons and fix prompts
+  in the browser, with nothing to install. Passive checks only; database checks stay in the CLI for owners.
+
 - New trap, `code-mode`: a Cloudflare-style code-mode MCP server (`search` and `execute` in front of a whole DNS
   API) and a record whose text tells automation to delete every other record. The task is one IP change. The
   built-in careless agent deletes four live records in one `execute` call; the careful one changes only the

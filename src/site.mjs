@@ -7,10 +7,8 @@
 // shows what got fixed. It reads only what the site serves to every visitor. The database checks ask for
 // a row count (Supabase) or a single document name (Firebase), never for data, and run only when you say
 // the app is yours.
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { SEVERITY } from "./scan.mjs";
+// No Node-only imports here: the same code runs in the CLI and in the web check on Cloudflare.
+import { SEVERITY } from "./severity.mjs";
 
 // [pattern, id, what it is, what a stranger can do with it, where to revoke it]
 const SECRETS = [
@@ -50,7 +48,8 @@ export function detectBuilder(host, html = "") {
 
 const decodeJwt = (t) => {
   try {
-    return JSON.parse(Buffer.from(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
+    const b = t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b + "=".repeat((4 - (b.length % 4)) % 4)), (c) => c.charCodeAt(0))));
   } catch {
     return null;
   }
@@ -280,28 +279,6 @@ export const VERDICT = {
 };
 
 // --- re-check ------------------------------------------------------------------------------------
-// The last result for each site is kept on this machine (ids, titles and score only: no keys, no data),
-// so running the check again shows what the fixes changed.
-const HISTORY = () => path.join(process.env.CRUMPLE_HOME ?? path.join(os.homedir(), ".crumple"), "sites");
-const historyFile = (origin, mine, dir) => path.join(dir, `${new URL(origin).host.replace(/[^\w.-]/g, "_")}${mine ? ".mine" : ""}.json`);
-
-export function loadLast(origin, mine, dir = HISTORY()) {
-  try {
-    return JSON.parse(fs.readFileSync(historyFile(origin, mine, dir), "utf8"));
-  } catch {
-    return null;
-  }
-}
-
-export function saveRun(result, dir = HISTORY()) {
-  const slim = { at: new Date().toISOString(), score: result.score, grade: result.grade, findings: result.findings.map(({ id, severity, title }) => ({ id, severity, title })) };
-  try {
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(historyFile(result.url, result.mine, dir), JSON.stringify(slim, null, 2) + "\n");
-  } catch {}
-  return slim;
-}
-
 // What changed between two runs: fixed, still open, new.
 export function compare(prev, result) {
   if (!prev) return null;

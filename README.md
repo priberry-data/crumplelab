@@ -79,7 +79,7 @@ Built your app with Lovable, Bolt, v0, Replit, Emergent or any other AI app buil
 most often are visible to anyone who opens the site.
 
 ```bash
-npx crumplelab site myapp.lovable.app          # what every visitor can see
+npx crumplelab site myapp.lovable.app          # what every visitor can see (or, with nothing to install: crumple.priberry.com/check)
 npx crumplelab site myapp.lovable.app --mine   # also: which Supabase tables or Firebase data anyone can read
 npx crumplelab site myapp.lovable.app --prompt 1 | pbcopy   # copy fix prompt 1
 ```

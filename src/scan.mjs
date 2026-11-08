@@ -8,7 +8,8 @@ import { execFileSync } from "node:child_process";
 const HIDDEN = /[​-‏‪-‮⁠-⁤⁦-⁩﻿]|[\u{E0000}-\u{E007F}]/u;
 const SECRET_VALUES = /AKIA[0-9A-Z]{16}|sk_(live|test)_[0-9A-Za-z_]{10,}|sk-(ant|proj)-[0-9A-Za-z_-]{10,}|gh[pousr]_[0-9A-Za-z]{30,}|github_pat_[0-9A-Za-z_]{20,}|glpat-[0-9A-Za-z_-]{20}|xox[bpas]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{35}|npm_[0-9A-Za-z]{36}/;
 const INJECTION = /ignore (all |any )?(previous|prior|above) instructions|do not (mention|tell|reveal) (this|the user)|(curl|wget)[^\n|]*\|\s*(ba|z)?sh\b|--data(-binary)? @\.env|you are now|system prompt:|<\s*important\s*>/i;
-export const SEVERITY = { critical: 40, high: 15, medium: 5, low: 1 };
+import { SEVERITY } from "./severity.mjs";
+export { SEVERITY };
 
 const read = (p, limit = 2 * 1024 * 1024) => {
   try {

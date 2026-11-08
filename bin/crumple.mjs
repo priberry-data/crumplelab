@@ -139,7 +139,8 @@ if (positionals[0] === "mcp") {
     console.error("Usage: npx crumplelab site <url> [--mine] [--prompt N] [--json]   checks a deployed app (Lovable, Bolt, v0, Replit, Emergent, any site)");
     process.exit(2);
   }
-  const { siteScan, loadLast, saveRun, compare, renderSite } = await import("../src/site.mjs");
+  const { siteScan, compare, renderSite } = await import("../src/site.mjs");
+  const { loadLast, saveRun } = await import("../src/site-history.mjs");
   const run = () => siteScan(positionals[1], { mine: opt.mine });
   let result;
   try {

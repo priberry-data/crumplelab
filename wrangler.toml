@@ -1,0 +1,9 @@
+# Cloudflare Pages for crumple.priberry.com: the static site in site/, plus the web check in functions/.
+name = "crumple-site"
+pages_build_output_dir = "site"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "CHECK"
+id = "687e9ad4b0a64e6e9544de8798bdc5be"

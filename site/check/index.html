@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check your AI-built app · crumple</title>
+<meta name="description" content="Built your app with Lovable, Bolt, v0, Replit or Emergent? Paste its address: get a grade from A to F, what each problem means in plain words, and a prompt to paste back into your builder to fix it. Free, nothing to install.">
+<link rel="canonical" href="https://crumple.priberry.com/check/">
+<meta name="theme-color" content="#050705">
+<link rel="icon" href="/brand/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="crumple">
+<meta property="og:title" content="Is your AI-built app leaking? Check it in 10 seconds">
+<meta property="og:description" content="Paste your Lovable, Bolt, v0 or Replit app's address. Get a grade, plain-English reasons and the prompt that fixes it.">
+<meta property="og:url" content="https://crumple.priberry.com/check/">
+<meta property="og:image" content="https://crumple.priberry.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script src="/mode.js"></script>
+<link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="/check/check.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<header class="bar" role="banner">
+  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> check</span></a>
+  <nav aria-label="Sections">
+    <a href="/">home</a>
+    <a href="/#apps">about</a>
+  </nav>
+</header>
+
+<main id="main">
+<section class="window" aria-labelledby="check-t">
+  <h1 id="check-t" class="title"><span>═ is my app leaking? ═</span></h1>
+  <p class="big">Built your app with Lovable, Bolt, v0, Replit or Emergent? Paste its address. In about ten seconds you get a grade, what each problem means in plain words, and a prompt to paste back into your builder that fixes it.</p>
+  <form id="f" class="checkform" novalidate>
+    <label for="u" class="sr">Your app's address</label>
+    <span class="p" aria-hidden="true">$</span>
+    <input id="u" name="url" type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false" placeholder="myapp.lovable.app" required>
+    <button id="go" type="submit">check</button>
+  </form>
+  <p class="note dim">Crumple reads only what your site sends to every visitor: the page and its JavaScript. It never signs in, never touches your database and keeps nothing about you. Results are cached for ten minutes.</p>
+  <div id="out" aria-live="polite"></div>
+</section>
+
+<section class="window" aria-labelledby="more-t">
+  <h2 id="more-t" class="title"><span>═ go deeper ═</span></h2>
+  <p>The web check can't look inside your database, because it can't know the app is yours. On your own computer it can: it counts which Supabase tables, or which Firebase data, anyone on the internet can read, without reading the data itself.</p>
+  <pre class="out install"><span class="p">$</span> npx crumplelab site myapp.lovable.app --mine</pre>
+  <p class="dim">Needs Node.js. Free and open source: <a href="https://github.com/priberry-data/crumplelab">github.com/priberry-data/crumplelab</a></p>
+</section>
+</main>
+
+<footer class="bar foot">
+  <span>© 2026 <a href="https://priberry.com">priberry</a> · crumple is built by priberry</span>
+  <span><a href="mailto:crumple@priberry.com">crumple@priberry.com</a> · <a href="https://priberry.com/privacy/">privacy</a></span>
+  <span class="dim">no cookies · no trackers · no third-party requests</span>
+</footer>
+
+<script src="/check/check.js" defer></script>
+</body>
+</html>

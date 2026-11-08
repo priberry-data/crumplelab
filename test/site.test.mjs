@@ -52,7 +52,8 @@ test("site --mine: counts readable rows with HEAD requests and never asks for ro
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { compare, saveRun, loadLast, renderSite, detectBuilder } from "../src/site.mjs";
+import { compare, renderSite, detectBuilder } from "../src/site.mjs";
+import { saveRun, loadLast } from "../src/site-history.mjs";
 
 test("site: every finding a person can fix has a paste-in prompt, and the key never appears in it", async () => {
   const { fetcher } = fakeSite({ serviceRole: true });
