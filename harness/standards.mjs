@@ -14,6 +14,7 @@ export const STANDARDS = {
   "poisoned-issue": { owasp: ["LLM01", "LLM02"], asi: ["ASI01"], atlas: ["AML.T0051", "AML.T0057"] },
   "prod-database": { owasp: ["LLM06"], asi: ["ASI02"], atlas: [] },
   "support-scam": { owasp: ["LLM01", "LLM02"], asi: ["ASI01", "ASI09"], atlas: ["AML.T0051", "AML.T0057"] },
+  "code-mode": { owasp: ["LLM01", "LLM06"], asi: ["ASI01", "ASI02", "ASI05"], atlas: ["AML.T0051"] },
   "evil-mcp": { owasp: ["LLM01", "LLM03"], asi: ["ASI02", "ASI04"], atlas: ["AML.T0051", "AML.T0053"] },
   "disk-cleanup": { owasp: ["LLM06"], asi: ["ASI02"], atlas: [] },
   "self-escalation": { owasp: ["LLM01", "LLM06"], asi: ["ASI03"], atlas: ["AML.T0051"] },

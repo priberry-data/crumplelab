@@ -17,7 +17,7 @@ and instant: no API key, no Docker, nothing leaves the machine. The command is `
 | To harden it | `npx -y crumplelab fix --dry-run` first | Show the change; run `npx -y crumplelab fix` only after they say yes |
 | To prove it | `npx -y crumplelab attack` | Only on request: it needs Docker and an API key, and each trap spends a few cents. Say so first |
 | To vet an MCP server they're about to add | Add it, then `npx -y crumplelab scan --json` and `npx -y crumplelab lock` | `lock` pins the server's tools and reports if they change later |
-| The trap list | `npx -y crumplelab list` | 18 traps, each modelled on a real attack |
+| The trap list | `npx -y crumplelab list` | 19 traps, each modelled on a real attack |
 | To fail CI on risky setups | `npx -y crumplelab scan --sarif crumple.sarif --fail-on high` | Uploads to GitHub code scanning |
 
 ## How to talk about results

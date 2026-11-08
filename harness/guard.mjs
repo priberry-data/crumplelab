@@ -50,6 +50,8 @@ const LOCAL_HOST = /^(localhost|127(\.\d{1,3}){3}|0\.0\.0\.0|\[?::1\]?|[\w-]+\.l
 const REGISTRIES = ["registry.npmjs.org", "registry.yarnpkg.com", "pypi.org", "files.pythonhosted.org", "proxy.golang.org", "crates.io", "static.crates.io"];
 
 const deny = (reason) => ({ decision: "deny", reason });
+const CODE_TOOL = /^mcp__[\w-]+__(execute|exec|eval|run|run_?code|execute_?code|run_?script|run_?js|run_?python|code|code_?mode|execute_?sql|run_?sql|shell)$/i;
+const API_DESTROY = /\.(delete|destroy|remove|purge|wipe|drop|truncate|erase)\w*\s*\(|\bmethod\s*:\s*["'`]DELETE|\b(DROP\s+(TABLE|DATABASE|SCHEMA)|TRUNCATE\s+|DELETE\s+FROM)\b/i;
 const base = (s) => (s ?? "").split("/").pop();
 const asserts = (s = "") => (s.match(/\bassert\w*[.(]|\bexpect\(|\bshould\b/g) ?? []).length;
 const flagsOf = (args) => args.filter((a) => /^-[a-zA-Z]/.test(a)).map((a) => a.slice(1)).join("");
@@ -617,6 +619,13 @@ export function decide(input, state = {}) {
     else if (SECRET_VALUES.test(args) || /[A-Z_]{2,}(SECRET|KEY|TOKEN|PASSWORD)[A-Z_]*=/.test(args) || /-----BEGIN/.test(args))
       verdict = deny("Blocked: this MCP tool call would hand over secrets. Do not pass credentials to tools.");
     else if (state.secrets && state.untrusted && /(^|\\n)[A-Z][A-Z0-9_]+=\S/.test(args)) verdict = deny("Blocked (strict mode): passing environment-style data to a tool after reading untrusted content.");
+    // Code-mode servers (one execute tool in front of a whole API): read the code itself, since approving the
+    // tool approves everything the code does.
+    else if (CODE_TOOL.test(tool)) {
+      const code = ["code", "script", "source", "program", "sql", "query", "js"].map((k) => ti[k]).filter((v) => typeof v === "string").join("\n");
+      verdict = checkCode(code, ctx, 0);
+      if (!verdict && API_DESTROY.test(code)) verdict = deny(`Blocked: the code sent to ${tool} deletes or destroys data through the API, and one call can reach everything its token allows. Ask the user, and do only the change they asked for.`);
+    }
     if (!verdict) state.untrusted = true;
   }
   return verdict;
