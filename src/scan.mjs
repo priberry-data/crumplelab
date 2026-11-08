@@ -23,10 +23,36 @@ const json = (p) => {
   if (t == null) return null;
   try {
     return JSON.parse(t);
+  } catch {}
+  try {
+    return JSON.parse(stripJsonc(t)); // VS Code, Zed and others allow comments and trailing commas
   } catch {
     return null;
   }
 };
+// Drops // and /* */ comments and trailing commas, leaving strings alone.
+function stripJsonc(t) {
+  let out = "";
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (c === '"') {
+      let j = i + 1;
+      while (j < t.length && t[j] !== '"') j += t[j] === "\\" ? 2 : 1;
+      out += t.slice(i, j + 1);
+      i = j;
+    } else if (c === "/" && t[i + 1] === "/") while (i < t.length && t[i] !== "\n") i++;
+    else if (c === "/" && t[i + 1] === "*") {
+      i = t.indexOf("*/", i + 2);
+      if (i < 0) break;
+      i++;
+    } else out += c;
+  }
+  return out.replace(/,(\s*[}\]])/g, "$1");
+}
+// Where VS Code-based editors and desktop apps keep their per-user settings.
+const appSupport = (home) =>
+  process.platform === "darwin" ? path.join(home, "Library", "Application Support") : process.platform === "win32" ? process.env.APPDATA || path.join(home, "AppData", "Roaming") : path.join(home, ".config");
+const EDITORS = ["Code", "Code - Insiders", "Cursor", "Windsurf", "VSCodium", "Trae", "Kiro", "Positron", "Void"];
 const redact = (s) => String(s).replace(new RegExp(SECRET_VALUES.source, "g"), (m) => m.slice(0, 4) + "…[redacted]");
 
 export function scan(projectDir, { home = os.homedir() } = {}) {
@@ -71,19 +97,38 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
   if (!sandboxed) add("medium", "agent setup", "The agent's commands don't run in a sandbox", "Commands can reach every file you can and any server on the internet. Sandboxes and egress limits are the defenses research shows hold up under adaptive attacks.", "Run `crumple fix --sandbox` to switch on Claude Code's built-in sandbox with a network allowlist.");
 
   // --- MCP servers, across agents -------------------------------------------------------------
-  const mcpFiles = [P(".mcp.json"), H(".claude.json"), P(".cursor/mcp.json"), H(".cursor/mcp.json"), P(".vscode/mcp.json"), H(".codeium/windsurf/mcp_config.json"), H(".gemini/settings.json"), P(".gemini/settings.json")];
-  for (const f of mcpFiles) {
+  const app = appSupport(home);
+  const mcpFiles = [
+    P(".mcp.json"), H(".claude.json"), path.join(app, "Claude", "claude_desktop_config.json"),
+    P(".cursor/mcp.json"), H(".cursor/mcp.json"), P(".vscode/mcp.json"), H(".codeium/windsurf/mcp_config.json"),
+    H(".gemini/settings.json"), P(".gemini/settings.json"), P(".kiro/settings/mcp.json"), H(".kiro/settings/mcp.json"),
+    P(".roo/mcp.json"), H(".aws/amazonq/mcp.json"), P(".amazonq/mcp.json"), P("opencode.json"), H(".config/opencode/opencode.json"),
+    H(".config/zed/settings.json"), P(".zed/settings.json"), P(".continue/config.json"), H(".continue/config.json"),
+    ...EDITORS.flatMap((ed) => [
+      path.join(app, ed, "User", "mcp.json"),
+      path.join(app, ed, "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json"),
+      path.join(app, ed, "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "mcp_settings.json"),
+      path.join(app, ed, "User", "globalStorage", "kilocode.kilo-code", "settings", "mcp_settings.json"),
+    ]),
+  ];
+  for (const f of [...new Set(mcpFiles)]) {
     const cfg = json(f);
-    const servers = { ...(cfg?.mcpServers ?? {}), ...(cfg?.servers ?? {}) };
+    // Each tool names the block differently: mcpServers (most), servers (VS Code), mcp (opencode), context_servers (Zed).
+    const servers = { ...(cfg?.mcpServers ?? {}), ...(cfg?.servers ?? {}), ...(cfg?.mcp ?? {}), ...(cfg?.context_servers ?? {}) };
+    if (Array.isArray(cfg?.experimental?.modelContextProtocolServers))
+      cfg.experimental.modelContextProtocolServers.forEach((x, i) => (servers[x.name || `server ${i + 1}`] = x.transport || x));
     for (const proj of Object.values(cfg?.projects ?? {})) Object.assign(servers, proj?.mcpServers ?? {});
     for (const [name, srv] of Object.entries(servers)) {
+      if (!srv || typeof srv !== "object") continue;
       const where = `${rel(f)} → ${name}`;
-      const cmd = [srv.command, ...(srv.args ?? [])].join(" ");
+      // opencode gives the command as an array; Zed nests it as { path, args }.
+      const parts = Array.isArray(srv.command) ? srv.command : srv.command?.path ? [srv.command.path, ...(srv.command.args ?? [])] : [srv.command, ...(srv.args ?? [])];
+      const cmd = parts.filter(Boolean).join(" ");
       if (/\b(npx|bunx|pnpm dlx|uvx)\b/.test(cmd)) {
-        const pkg = (srv.args ?? []).find((a) => !String(a).startsWith("-")) ?? "";
+        const pkg = parts.slice(1).find((a) => !String(a).startsWith("-") && !/^(dlx|x)$/.test(a)) ?? "";
         if (!/@\d/.test(pkg.replace(/^@[^/]+\//, "")) || /@latest$/.test(pkg)) add("high", where, `MCP server runs whatever version is newest (${pkg || cmd})`, "If that package is ever compromised or sold, your agent runs the new code with your keys the next time it starts (MCP rug pull).", `Pin an exact version, for example ${pkg.replace(/@latest$/, "")}@1.2.3, and run \`crumple lock\`.`);
       }
-      const blob = JSON.stringify({ env: srv.env, args: srv.args, headers: srv.headers, url: srv.url });
+      const blob = JSON.stringify({ env: srv.env ?? srv.environment, args: parts.slice(1), headers: srv.headers, url: srv.url });
       if (SECRET_VALUES.test(blob) || /"[A-Z_]*(TOKEN|SECRET|KEY|PASSWORD)[A-Z_]*":"[^"$]{12,}"/.test(blob)) add("high", where, "MCP server config holds a secret in plain text", "Any agent or extension that reads this file gets the key.", "Reference an environment variable or keychain entry instead.");
       if (srv.url && /^http:\/\//.test(srv.url) && !/localhost|127\.0\.0\.1/.test(srv.url)) add("medium", where, "Remote MCP server over plain HTTP", "Anyone on the network path can read and change the tools your agent trusts.", "Use https.");
     }
@@ -96,9 +141,12 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
 
   // --- rules files and docs the agent reads -----------------------------------------------------
   const rulesFiles = ["CLAUDE.md", "AGENTS.md", "GEMINI.md", ".cursorrules", ".windsurfrules", ".clinerules", ".github/copilot-instructions.md", "CONTRIBUTING.md", "README.md"].map((f) => P(f));
-  try {
-    for (const f of fs.readdirSync(P(".cursor/rules"))) rulesFiles.push(P(".cursor/rules", f));
-  } catch {}
+  rulesFiles.push(P(".junie/guidelines.md"), P("CONVENTIONS.md"), P(".rules"));
+  // Rules folders: Cursor, Windsurf, Kiro, Roo, Cline (a folder form of .clinerules), Copilot, Amazon Q.
+  for (const d of [".cursor/rules", ".windsurf/rules", ".kiro/steering", ".roo/rules", ".clinerules", ".github/instructions", ".amazonq/rules", ".continue/rules"])
+    try {
+      for (const f of fs.readdirSync(P(d))) rulesFiles.push(P(d, f));
+    } catch {}
   rulesFiles.push(H(".claude/CLAUDE.md"), H(".codex/AGENTS.md"), H(".gemini/GEMINI.md"));
   for (const f of rulesFiles) {
     const t = read(f);

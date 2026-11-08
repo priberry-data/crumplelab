@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.priberry-data/crumplelab",
+  "title": "Crumple",
+  "description": "Audit AI coding agent setups and deployed apps for leaked keys, open data and risky config.",
+  "websiteUrl": "https://crumple.priberry.com",
+  "repository": {
+    "url": "https://github.com/priberry-data/crumplelab",
+    "source": "github"
+  },
+  "version": "0.3.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "crumplelab",
+      "version": "0.3.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}

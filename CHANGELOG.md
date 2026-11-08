@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0
+
+- `crumple site <url>`: checks a deployed app (Lovable, Bolt, v0, Replit, Emergent or hand-built) for secret keys
+  in its JavaScript, a Supabase `service_role` key in the browser, public source maps and a missing CSP. With
+  `--mine` it also counts which Supabase tables anyone can read, using `HEAD` requests that return no rows.
+- `crumple setup`: adds Crumple's MCP server to every AI coding app found (Claude Code, Claude Desktop, Cursor,
+  VS Code, Windsurf, Codex, Gemini CLI, Kiro, opencode, Amazon Q, LM Studio, Cline, Roo Code, Kilo Code), pinned
+  to the exact version, with backups and `--undo`.
+- `scan` reads more setups: Claude Desktop, VS Code's user `mcp.json`, Kiro, Roo Code, Cline and Kilo Code
+  settings, Zed, opencode, Amazon Q and Continue, config files with comments, and the rules folders
+  `.windsurf/rules`, `.kiro/steering`, `.roo/rules`, `.clinerules/`, `.github/instructions` and more.
+- `crumple_site` in the MCP server, and a Gemini CLI extension.
+- The Claude Code plugin now runs its own bundled code for the MCP server instead of an unpinned `npx crumplelab`,
+  which Crumple's own scan rightly flagged.
+- `--version`, and a clear message for options Crumple doesn't know.
+
 ## 0.2.4
 
 - **Fix:** `crumple scan` flagged every tracked file as "a .env file is committed to git" in any repo without a

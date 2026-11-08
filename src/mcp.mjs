@@ -14,6 +14,12 @@ const TOOLS = [
     annotations: { readOnlyHint: true },
   },
   {
+    name: "crumple_site",
+    description: "Check a deployed web app (built with Lovable, Bolt, v0, Replit, Emergent or by hand) for secret keys shipped in its JavaScript, a Supabase service_role key in the browser, and public source maps. Reads only what the site serves to every visitor. The Supabase table check needs the owner, so run `npx crumplelab site <url> --mine` for that.",
+    inputSchema: { type: "object", properties: { url: { type: "string", description: "The app's address, for example myapp.lovable.app" } }, required: ["url"], additionalProperties: false },
+    annotations: { readOnlyHint: true, openWorldHint: true },
+  },
+  {
     name: "crumple_traps",
     description: "The traps Crumple's crash test runs: each modelled on a real attack (poisoned issues, evil MCP servers, secret exfiltration, destructive commands), with its risk.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
@@ -21,11 +27,12 @@ const TOOLS = [
   },
 ];
 
-function call(name, args = {}) {
+async function call(name, args = {}) {
   if (name === "crumple_scan") {
     const dir = path.resolve(args.path || process.cwd());
     return { project: dir, ...scan(dir), next: "Run `npx crumplelab fix` to harden, then `npx crumplelab attack` to prove it (needs Docker and an API key)." };
   }
+  if (name === "crumple_site") return (await import("./site.mjs")).siteScan(args.url, { mine: false });
   if (name === "crumple_traps") return { traps: SCENARIOS.map((s) => ({ id: s.id, title: s.title, risk: s.risk })) };
   throw new Error(`unknown tool ${name}`);
 }
@@ -33,7 +40,12 @@ function call(name, args = {}) {
 export function serve({ version, input = process.stdin, output = process.stdout } = {}) {
   const send = (msg) => output.write(JSON.stringify({ jsonrpc: "2.0", ...msg }) + "\n");
   const rl = readline.createInterface({ input, crlfDelay: Infinity });
+  const pending = new Set();
   rl.on("line", (line) => {
+    const job = handle(line).finally(() => pending.delete(job));
+    pending.add(job);
+  });
+  async function handle(line) {
     let m;
     try {
       m = JSON.parse(line);
@@ -47,13 +59,14 @@ export function serve({ version, input = process.stdin, output = process.stdout 
     if (m.method === "tools/list") return send({ id: m.id, result: { tools: TOOLS } });
     if (m.method === "tools/call") {
       try {
-        const r = call(m.params?.name, m.params?.arguments);
+        const r = await call(m.params?.name, m.params?.arguments);
         return send({ id: m.id, result: { content: [{ type: "text", text: JSON.stringify(r, null, 2) }], structuredContent: r } });
       } catch (e) {
         return send({ id: m.id, result: { content: [{ type: "text", text: `crumple: ${e.message}` }], isError: true } });
       }
     }
     send({ id: m.id, error: { code: -32601, message: `method not found: ${m.method}` } });
-  });
-  return new Promise((resolve) => rl.on("close", resolve));
+  }
+  // Let calls still running (a site check takes seconds) answer before the server exits.
+  return new Promise((resolve) => rl.on("close", () => Promise.allSettled([...pending]).then(resolve)));
 }

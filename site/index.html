@@ -31,7 +31,7 @@
 <a class="skip" href="#main">skip to content</a>
 
 <header class="bar" role="banner">
-  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.2.4</span></a>
+  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.3.0</span></a>
   <nav aria-label="Sections">
     <a href="#how"><kbd>1</kbd>how</a>
     <a href="#traps"><kbd>2</kbd>traps</a>
@@ -52,7 +52,7 @@
 <main id="main">
 
 <section class="hero" aria-labelledby="hero-title">
-  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.2.4 · (c) 2026 priberry
+  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.3.0 · (c) 2026 priberry
 memory test ............ 640K ok
 sandbox ................ ok<span class="x">  docker · cap-drop ALL · no-new-privileges</span>
 traps .................. 18 armed
@@ -72,6 +72,7 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <a class="key primary" href="#start">[ get started ]</a>
     <a class="key" href="https://github.com/priberry-data/crumplelab">[ source on github ]</a>
   </div>
+  <p class="dim apps-hint">Built your app with Lovable, Bolt, v0 or Replit? <a href="#apps">Check what it leaks →</a></p>
 
   <figure class="window run dev" aria-labelledby="run-cap">
     <div class="title"><span>═ crumple attack ═</span><button class="replay" type="button" hidden>↻ replay</button></div>
@@ -161,6 +162,25 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
   <p class="big indep">We don't build or sell an AI agent. We crash-test them. That's why the results mean something.</p>
 </section>
 
+<section id="apps" class="window" aria-labelledby="apps-t">
+  <h2 id="apps-t" class="title"><span>═ <span class="dev">crumple site</span><span class="pub">apps built with AI</span> ═</span></h2>
+  <p class="big">Built your app with Lovable, Bolt, v0, Replit or Emergent? The mistakes they ship most often are visible to anyone who opens it.</p>
+  <pre class="out install"><span class="p">$</span> <span data-copy>npx crumplelab site yourapp.com</span></pre>
+  <ul class="plus dev">
+    <li><b>keys</b> secret keys inside the JavaScript every visitor downloads: Stripe, OpenAI, Anthropic, AWS, GitHub, Slack, Resend, SendGrid, Twilio, Groq, Gemini.</li>
+    <li><b>supabase</b> a <code>service_role</code> key in the browser skips every security rule. With <code>--mine</code>, Crumple counts which tables anyone can read, using requests that return a count and never a row.</li>
+    <li><b>source</b> public source maps hand out your whole source code.</li>
+    <li><b>headers</b> no Content-Security-Policy, so an injected script can send your users' data anywhere.</li>
+  </ul>
+  <ul class="plus pub">
+    <li><b>Leaked keys:</b> passwords to paid services (payments, email, AI) left inside the app where any visitor can copy them and run up your bill.</li>
+    <li><b>Open data:</b> a database that anyone on the internet can read, which is how most apps built this way have leaked their users' details.</li>
+    <li><b>Exposed code:</b> the app's whole source code, published by accident.</li>
+    <li><b>Every finding comes with the fix,</b> in plain words: which key to revoke, which switch to turn on.</li>
+  </ul>
+  <p class="note dim">Crumple reads only what your site serves to every visitor. The database check runs only when you add <code>--mine</code>, for an app that is yours.</p>
+</section>
+
 <section id="reports" class="window" aria-labelledby="reports-t">
   <h2 id="reports-t" class="title"><span>═[4]═ reports</span></h2>
   <p class="big dev">Every run writes a share card, a README badge, a Markdown report mapped to OWASP and MITRE ATLAS, SARIF for code scanning, and raw JSON you can diff.</p>
@@ -213,7 +233,7 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <details><summary>Is it safe to run on my machine?</summary><p>Yes. The attacks run inside a throwaway Docker container with every capability dropped. The keys inside are fake and made fresh for each run, and every network exit leads back to Crumple, so nothing reaches the outside world. <code>crumple scan</code> doesn't even need Docker.</p></details>
     <details><summary>Does Crumple see my code or my keys?</summary><p>No. Crumple runs on your machine and sends us nothing. During an attack, your agent talks only to its own model provider, using your own key or subscription.</p></details>
     <details><summary>What does a crash test cost?</summary><p>The tool is free. Real agents use your own API key or subscription, and each trap is one short agent session. We'll publish measured costs alongside the first live results.</p></details>
-    <details><summary>Which agents does it support?</summary><p>Claude Code, Codex CLI and Gemini CLI today. GitHub Copilot CLI and Cursor are next.</p></details>
+    <details><summary>Which agents does it support?</summary><p>The crash test runs Claude Code, Codex CLI and Gemini CLI; GitHub Copilot CLI and Cursor are next. <code>scan</code> reads the setups of 15 agents and editors: Claude Code and Claude Desktop, Codex, Gemini CLI, Cursor, Windsurf, VS Code, Kiro, Cline, Roo Code, Kilo Code, Zed, opencode, Amazon Q and Continue. <code>site</code> checks any deployed app, whatever built it.</p></details>
     <details><summary>Are you affiliated with Anthropic, OpenAI or Google?</summary><p>No. Crumple is independent and built by Priberry. We don't build or sell an AI agent, so we have no reason to favour one.</p></details>
     <details><summary>What happens when you find a real vulnerability?</summary><p>We report it privately to the vendor first and give them at least 30 days to fix it before we publish. Found one in Crumple itself? See <a href="/.well-known/security.txt">security.txt</a>.</p></details>
     <details><summary>When can I install it?</summary><p>Now. Run <code>npx crumplelab scan</code>. It needs Node 20 or newer, and Docker for the crash test. The code is on <a href="https://github.com/priberry-data/crumplelab">GitHub</a> under Apache 2.0.</p></details>
@@ -231,16 +251,26 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <dt><span class="p">$</span> <span data-copy>npx crumplelab fix</span></dt>
     <dd>Harden the setup, then attack again to prove it holds.</dd>
   </dl>
-  <h3 class="sub">Inside your agent</h3>
+  <h3 class="sub">Works in every AI coding app</h3>
+  <dl class="man">
+    <dt><span class="p">$</span> <span data-copy>npx crumplelab setup</span></dt>
+    <dd>Finds every AI coding app on your machine and adds Crumple to each: Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, Kiro, opencode, Amazon Q, LM Studio, and Cline, Roo Code and Kilo Code. Pinned to the exact version, each file backed up first, <code>--undo</code> takes it out. Then ask "is my agent setup safe?"</dd>
+  </dl>
+  <div class="ctas">
+    <a class="key" href="cursor://anysphere.cursor-deeplink/mcp/install?name=crumple&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImNydW1wbGVsYWJAMC4zLjAiLCJtY3AiXX0=">[ add to cursor ]</a>
+    <a class="key" href="vscode:mcp/install?%7B%22name%22%3A%22crumple%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22crumplelab%400.3.0%22%2C%22mcp%22%5D%7D">[ add to vs code ]</a>
+  </div>
   <dl class="man">
     <dt>Claude Code plugin</dt>
-    <dd><code data-copy>/plugin marketplace add priberry-data/crumplelab</code>, then <code>/plugin install crumple@priberry</code>. Adds the skill and the MCP server; ask "is my agent setup safe?"</dd>
+    <dd><code data-copy>/plugin marketplace add priberry-data/crumplelab</code>, then <code>/plugin install crumple@priberry</code>.</dd>
+    <dt>Gemini CLI extension</dt>
+    <dd><code data-copy>gemini extensions install https://github.com/priberry-data/crumplelab</code></dd>
     <dt>Skill (Claude Code or Codex)</dt>
     <dd>Copy <code>skills/crumple</code> from the repo into <code>~/.claude/skills/</code> or <code>~/.codex/skills/</code>.</dd>
-    <dt>MCP server (any agent)</dt>
-    <dd><code data-copy>npx -y crumplelab mcp</code> over stdio. Tools: <code>crumple_scan</code> (the setup scan, instant and local) and <code>crumple_traps</code>. The crash test itself spends API credit, so it stays a command you run on purpose.</dd>
+    <dt>Any other MCP client</dt>
+    <dd><code data-copy>npx -y crumplelab@0.3.0 mcp</code> over stdio. Tools: <code>crumple_scan</code>, <code>crumple_site</code>, <code>crumple_traps</code>.</dd>
   </dl>
-  <p class="dim">Version 0.2. Tell us what breaks, or ask about team plans: <a href="mailto:crumple@priberry.com?subject=crumple">crumple@priberry.com</a> · <a href="https://github.com/priberry-data/crumplelab/issues">github issues</a></p>
+  <p class="dim">Version 0.3. Tell us what breaks, or ask about team plans: <a href="mailto:crumple@priberry.com?subject=crumple">crumple@priberry.com</a> · <a href="https://github.com/priberry-data/crumplelab/issues">github issues</a></p>
 </section>
 
 </main>

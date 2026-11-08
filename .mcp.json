@@ -1,5 +1,5 @@
 {
   "mcpServers": {
-    "crumple": { "command": "npx", "args": ["-y", "crumplelab", "mcp"] }
+    "crumple": { "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/bin/crumple.mjs", "mcp"] }
   }
 }

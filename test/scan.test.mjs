@@ -69,3 +69,36 @@ test("a clean repo with tracked files and no .env is not flagged for a committed
   const titles = scan(proj, { home }).findings.map((f) => f.title).join("\n");
   assert.doesNotMatch(titles, /committed to git/);
 });
+
+test("MCP configs and rules folders from other editors are read too", () => {
+  const { home, proj } = fixture();
+  fs.mkdirSync(path.join(proj, ".vscode"), { recursive: true });
+  // VS Code allows comments and trailing commas.
+  fs.writeFileSync(path.join(proj, ".vscode/mcp.json"), '{\n  // team servers\n  "servers": { "web": { "command": "npx", "args": ["-y", "web-mcp"], }, },\n}');
+  fs.writeFileSync(path.join(proj, "opencode.json"), JSON.stringify({ mcp: { db: { type: "local", command: ["npx", "-y", "db-mcp@latest"] } } }));
+  fs.mkdirSync(path.join(home, ".config/zed"), { recursive: true });
+  fs.writeFileSync(path.join(home, ".config/zed/settings.json"), JSON.stringify({ context_servers: { git: { command: { path: "uvx", args: ["git-mcp"] } } } }));
+  fs.mkdirSync(path.join(proj, ".windsurf/rules"), { recursive: true });
+  fs.writeFileSync(path.join(proj, ".windsurf/rules/style.md"), "Use tabs." + String.fromCodePoint(0xe0041));
+  const r = scan(proj, { home });
+  const titles = r.findings.map((f) => `${f.where} | ${f.title}`).join("\n");
+  assert.match(titles, /\.vscode\/mcp\.json → web \| MCP server runs whatever version is newest \(web-mcp\)/);
+  assert.match(titles, /opencode\.json → db \| MCP server runs whatever version is newest \(db-mcp@latest\)/);
+  assert.match(titles, /zed\/settings\.json → git \| MCP server runs whatever version is newest \(git-mcp\)/);
+  assert.match(titles, /\.windsurf\/rules\/style\.md \| Invisible characters/);
+});
+
+test("setup pins the version and undoes cleanly", async () => {
+  const { setup } = await import("../src/clients.mjs");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "crumple-setup-"));
+  fs.mkdirSync(path.join(root, ".cursor"));
+  const opts = { name: "crumple", pkg: "crumplelab", version: "1.2.3", home: root, backupDir: path.join(root, "bk"), claudeCli: false };
+  assert.deepEqual(setup(opts).map((r) => [r.client, r.status]), [["Cursor", "added"]]);
+  const cfg = JSON.parse(fs.readFileSync(path.join(root, ".cursor/mcp.json"), "utf8"));
+  assert.deepEqual(cfg.mcpServers.crumple.args, ["-y", "crumplelab@1.2.3", "mcp"]);
+  // Crumple's own scan must not flag the entry setup writes.
+  const r = scan(path.join(root, "proj-none"), { home: root });
+  assert.ok(!r.findings.some((f) => /crumple/.test(f.where)));
+  setup({ ...opts, undo: true });
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, ".cursor/mcp.json"), "utf8")).mcpServers, {});
+});

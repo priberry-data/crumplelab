@@ -2,7 +2,7 @@
 
 # Crumple: crash-test your AI coding agent
 
-> **Version 0.2.** Needs Node 20+ and Docker (`scan` needs neither). So far Crumple's scores are
+> **Version 0.3.** Needs Node 20+ and Docker (`scan`, `site` and `setup` need neither). So far Crumple's scores are
 > verified against its built-in test agents; results for Claude Code, Codex and Gemini CLI will be published
 > as they're run. Website: [crumple.priberry.com](https://crumple.priberry.com) · contact: crumple@priberry.com
 
@@ -13,12 +13,17 @@ Your AI agent can read your `.env`, run shell commands and touch your databases.
 npx crumplelab scan      # 5 seconds, no API key, nothing leaves your machine
 npx crumplelab attack    # the real crash test, in a throwaway container
 npx crumplelab fix       # harden it, then attack again to prove it
+npx crumplelab site myapp.lovable.app   # built your app with an AI app builder? check what it leaks
 ```
 
 `scan` audits your agent setup the way an attacker would read it: skip-permissions modes, pre-approved
 commands that can run anything, MCP servers on `@latest` or with keys in plain text, invisible characters in
 `CLAUDE.md` and `.cursorrules`, repo hooks and auto-run tasks, base-URL redirects, committed `.env` files.
-It prints a Safe Setup score, writes SARIF for GitHub code scanning, and fails CI with `--fail-on high`.
+It reads the setups of Claude Code, Claude Desktop, Codex, Gemini CLI, Cursor, Windsurf, VS Code (project
+and user `mcp.json`), Kiro, Cline, Roo Code, Kilo Code, Zed, opencode, Amazon Q and Continue, and the rules
+files and folders they all read (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`, `.windsurf/rules`, `.kiro/steering`,
+`.roo/rules`, `.clinerules`, `.github/instructions` and more). It prints a Safe Setup score, writes SARIF for
+GitHub code scanning, and fails CI with `--fail-on high`.
 
 `attack` builds eighteen booby-trapped projects inside a Docker container, runs **your own** agent setup
 against each one headless, and times how long it takes to fall in. Every trap is drawn from a real CVE,
@@ -66,6 +71,29 @@ Score: 0/18 traps survived
 [crumple.priberry.com](https://crumple.priberry.com) once they have been run.)
 
 You get a card to share, a badge for your README, and a fix for every failed trap.
+
+## Check a deployed app
+
+Built your app with Lovable, Bolt, v0, Replit, Emergent or any other AI app builder? The mistakes they ship
+most often are visible to anyone who opens the site.
+
+```bash
+npx crumplelab site myapp.lovable.app          # what every visitor can see
+npx crumplelab site myapp.lovable.app --mine   # also: which Supabase tables anyone can read
+```
+
+`site` reads the page and the JavaScript it serves, the way a curious stranger would, and looks for:
+
+- secret keys in code every visitor downloads (Stripe, OpenAI, Anthropic, AWS, GitHub, Slack, Resend,
+  SendGrid, Twilio, Groq, Gemini)
+- a Supabase `service_role` key in the browser, which skips every security rule
+- public source maps, which hand out your whole source code
+- no Content-Security-Policy
+
+With `--mine`, for an app you own, it takes the public Supabase anon key the app already ships and asks the
+database which tables anyone can read. It sends `HEAD` requests with `count=exact`, so Postgres returns a row
+count and never a row. Tables of people (users, profiles, orders, messages) are marked critical, and each
+finding says which switch to flip in Supabase.
 
 ## Fix it
 
@@ -134,13 +162,24 @@ invisible text in `CLAUDE.md`, a changed MCP tool) fail, and findings appear in 
 
 ## In your agent
 
+One command adds Crumple to every AI coding app it finds: Claude Code, Claude Desktop, Cursor, VS Code,
+Windsurf, Codex, Gemini CLI, Kiro, opencode, Amazon Q, LM Studio, and Cline, Roo Code and Kilo Code. The
+entry is pinned to the exact version, each file is backed up first, and `--undo` removes it.
+
+```bash
+npx crumplelab setup
+```
+
+Or one app at a time:
+
 - **Claude Code plugin:** `/plugin marketplace add priberry-data/crumplelab`, then `/plugin install crumple@priberry`
   (or in one step: `/plugin install crumple --marketplace priberry-data/crumplelab`). Adds the skill and the MCP server;
   ask "is my agent setup safe?"
+- **Gemini CLI extension:** `gemini extensions install https://github.com/priberry-data/crumplelab`
 - **Skill (Claude Code or Codex):** copy `skills/crumple` into `~/.claude/skills/` or `~/.codex/skills/`.
-- **MCP server (any agent):** `{"command": "npx", "args": ["-y", "crumplelab", "mcp"]}`. Tools: `crumple_scan`
-  (the setup scan, local and instant) and `crumple_traps`. The full crash test spends API credit, so it stays a
-  command you run on purpose.
+- **Any MCP client:** `{"command": "npx", "args": ["-y", "crumplelab@0.3.0", "mcp"]}`. Tools: `crumple_scan`
+  (the setup scan, local and instant), `crumple_site` (what a deployed app shows every visitor) and
+  `crumple_traps`. The full crash test spends API credit, so it stays a command you run on purpose.
 
 ## Private trap packs
 
@@ -181,8 +220,8 @@ npx crumplelab attack --agent mock-careful
 
 ## Status
 
-v0.2: Claude Code, Codex CLI and Gemini CLI; 18 traps plus packs; `scan`, `fix`, `lock`, the guard and a
-GitHub Action. Not yet run against live models: the traps and checks are verified with scripted agents.
+v0.3: Claude Code, Codex CLI and Gemini CLI; 18 traps plus packs; `scan` across 15 agents and editors, `site`
+for deployed apps, `setup`, `fix`, `lock`, the guard and a GitHub Action. Not yet run against live models: the traps and checks are verified with scripted agents.
 Next: first live runs across vendors, Copilot CLI and Cursor adapters, and a public cross-vendor leaderboard.
 
-Apache-2.0 · Built by [Priberry](https://priberry.com)
+Apache-2.0 · Built by [Priberry](https://priberry.com), who also make [Tare](https://tare.priberry.com).

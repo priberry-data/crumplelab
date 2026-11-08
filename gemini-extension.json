@@ -1,0 +1,15 @@
+{
+  "name": "crumple",
+  "version": "0.3.0",
+  "description": "Audit AI coding agent setups and deployed apps for leaked keys, open data and risky config.",
+  "mcpServers": {
+    "crumple": {
+      "command": "node",
+      "args": [
+        "${extensionPath}/bin/crumple.mjs",
+        "mcp"
+      ],
+      "cwd": "${extensionPath}"
+    }
+  }
+}
