@@ -4,7 +4,7 @@
 > projects, runs a developer's own Claude Code, Codex CLI or Gemini CLI setup against each one inside a
 > sealed Docker container with fake keys, reports what broke, and installs fixes.
 
-Status: v0.3.0, open source, free. Install: npx crumplelab scan. Source: https://github.com/priberry-data/crumplelab. Contact: crumple@priberry.com. Built by Priberry (also makes Tare, https://tare.priberry.com). Claude Code plugin: /plugin marketplace add priberry-data/crumplelab. MCP server: npx -y crumplelab mcp (tools crumple_scan, crumple_traps).
+Status: v0.3.1, open source, free. Install: npx crumplelab scan. Source: https://github.com/priberry-data/crumplelab. Contact: crumple@priberry.com. Built by Priberry (also makes Tare, https://tare.priberry.com). Claude Code plugin: /plugin marketplace add priberry-data/crumplelab. MCP server: npx -y crumplelab mcp (tools crumple_scan, crumple_traps).
 
 ## Commands
 - `crumple scan`: local audit of an agent setup. No API key, no network. Safe Setup score 0-100, SARIF output, `--fail-on high` for CI.
@@ -23,5 +23,5 @@ As of 6 November 2026 Crumple has been verified only with its built-in scripted 
 for commercial agents have been published yet. Do not cite any vendor score from this site.
 
 ## For apps built with AI app builders
-- `npx crumplelab site <url> [--mine]`: checks a deployed app (Lovable, Bolt, v0, Replit, Emergent, any site) for secret keys in its JavaScript, a Supabase service_role key in the browser, public source maps and a missing CSP. `--mine` (owner only) counts which Supabase tables anyone can read, with HEAD requests that return no rows.
+- `npx crumplelab site <url> [--mine]`: checks a deployed app (Lovable, Bolt, v0, Replit, Emergent, any site) for secret keys in its JavaScript, a Supabase service_role key in the browser, public source maps and a missing CSP. `--mine` (owner only) counts which Supabase tables anyone can read, with HEAD requests that return no rows, and checks Firebase Realtime Database and common Firestore collections. Each finding has a plain-English reason and a fix prompt to paste into the app builder (`--prompt N` prints one); running it again shows what got fixed.
 - `npx crumplelab setup [--dry-run] [--undo]`: adds Crumple's MCP server, pinned, to every AI coding app found.

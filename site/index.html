@@ -31,7 +31,7 @@
 <a class="skip" href="#main">skip to content</a>
 
 <header class="bar" role="banner">
-  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.3.0</span></a>
+  <a class="home" href="/" aria-label="crumple home"><span class="logo" aria-hidden="true">c<i></i></span>crumple<span class="dim ver"> 0.3.1</span></a>
   <nav aria-label="Sections">
     <a href="#how"><kbd>1</kbd>how</a>
     <a href="#traps"><kbd>2</kbd>traps</a>
@@ -52,7 +52,7 @@
 <main id="main">
 
 <section class="hero" aria-labelledby="hero-title">
-  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.3.0 · (c) 2026 priberry
+  <pre class="boot dim dev" aria-hidden="true">crumple bios v0.3.1 · (c) 2026 priberry
 memory test ............ 640K ok
 sandbox ................ ok<span class="x">  docker · cap-drop ALL · no-new-privileges</span>
 traps .................. 18 armed
@@ -168,15 +168,16 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
   <pre class="out install"><span class="p">$</span> <span data-copy>npx crumplelab site yourapp.com</span></pre>
   <ul class="plus dev">
     <li><b>keys</b> secret keys inside the JavaScript every visitor downloads: Stripe, OpenAI, Anthropic, AWS, GitHub, Slack, Resend, SendGrid, Twilio, Groq, Gemini.</li>
-    <li><b>supabase</b> a <code>service_role</code> key in the browser skips every security rule. With <code>--mine</code>, Crumple counts which tables anyone can read, using requests that return a count and never a row.</li>
+    <li><b>supabase</b> a <code>service_role</code> key in the browser skips every security rule. With <code>--mine</code>, Crumple counts which tables anyone can read, using requests that return a count and never a row. Firebase too: an open Realtime Database or Firestore collection.</li>
     <li><b>source</b> public source maps hand out your whole source code.</li>
     <li><b>headers</b> no Content-Security-Policy, so an injected script can send your users' data anywhere.</li>
+    <li><b>fix</b> a grade from A to F, and for each finding a prompt to paste into your app builder. <code>--prompt 1</code> prints one for the clipboard. Run it again after the fix: it shows what got fixed.</li>
   </ul>
   <ul class="plus pub">
     <li><b>Leaked keys:</b> passwords to paid services (payments, email, AI) left inside the app where any visitor can copy them and run up your bill.</li>
     <li><b>Open data:</b> a database that anyone on the internet can read, which is how most apps built this way have leaked their users' details.</li>
     <li><b>Exposed code:</b> the app's whole source code, published by accident.</li>
-    <li><b>Every finding comes with the fix,</b> in plain words: which key to revoke, which switch to turn on.</li>
+    <li><b>Every finding comes with the fix:</b> a grade from A to F, what to do by hand (like revoking a key), and a prompt to paste into Lovable, Bolt or Replit that makes the change for you. Check again afterwards and Crumple shows what got fixed.</li>
   </ul>
   <p class="note dim">Crumple reads only what your site serves to every visitor. The database check runs only when you add <code>--mine</code>, for an app that is yours.</p>
 </section>
@@ -257,8 +258,8 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <dd>Finds every AI coding app on your machine and adds Crumple to each: Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Codex, Gemini CLI, Kiro, opencode, Amazon Q, LM Studio, and Cline, Roo Code and Kilo Code. Pinned to the exact version, each file backed up first, <code>--undo</code> takes it out. Then ask "is my agent setup safe?"</dd>
   </dl>
   <div class="ctas">
-    <a class="key" href="cursor://anysphere.cursor-deeplink/mcp/install?name=crumple&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImNydW1wbGVsYWJAMC4zLjAiLCJtY3AiXX0=">[ add to cursor ]</a>
-    <a class="key" href="vscode:mcp/install?%7B%22name%22%3A%22crumple%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22crumplelab%400.3.0%22%2C%22mcp%22%5D%7D">[ add to vs code ]</a>
+    <a class="key" href="cursor://anysphere.cursor-deeplink/mcp/install?name=crumple&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImNydW1wbGVsYWJAMC4zLjEiLCJtY3AiXX0=">[ add to cursor ]</a>
+    <a class="key" href="vscode:mcp/install?%7B%22name%22%3A%22crumple%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22crumplelab%400.3.1%22%2C%22mcp%22%5D%7D">[ add to vs code ]</a>
   </div>
   <dl class="man">
     <dt>Claude Code plugin</dt>
@@ -268,7 +269,7 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
     <dt>Skill (Claude Code or Codex)</dt>
     <dd>Copy <code>skills/crumple</code> from the repo into <code>~/.claude/skills/</code> or <code>~/.codex/skills/</code>.</dd>
     <dt>Any other MCP client</dt>
-    <dd><code data-copy>npx -y crumplelab@0.3.0 mcp</code> over stdio. Tools: <code>crumple_scan</code>, <code>crumple_site</code>, <code>crumple_traps</code>.</dd>
+    <dd><code data-copy>npx -y crumplelab@0.3.1 mcp</code> over stdio. Tools: <code>crumple_scan</code>, <code>crumple_site</code>, <code>crumple_traps</code>.</dd>
   </dl>
   <p class="dim">Version 0.3. Tell us what breaks, or ask about team plans: <a href="mailto:crumple@priberry.com?subject=crumple">crumple@priberry.com</a> · <a href="https://github.com/priberry-data/crumplelab/issues">github issues</a></p>
 </section>

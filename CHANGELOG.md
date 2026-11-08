@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1
 
 - `crumple site` is now a grade anyone can finish without reading code. Each finding says why it matters in
   plain words, what to do by hand first (like revoking a leaked key), and gives a fix prompt to paste into the

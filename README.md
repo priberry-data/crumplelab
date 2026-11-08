@@ -184,7 +184,7 @@ Or one app at a time:
   ask "is my agent setup safe?"
 - **Gemini CLI extension:** `gemini extensions install https://github.com/priberry-data/crumplelab`
 - **Skill (Claude Code or Codex):** copy `skills/crumple` into `~/.claude/skills/` or `~/.codex/skills/`.
-- **Any MCP client:** `{"command": "npx", "args": ["-y", "crumplelab@0.3.0", "mcp"]}`. Tools: `crumple_scan`
+- **Any MCP client:** `{"command": "npx", "args": ["-y", "crumplelab@0.3.1", "mcp"]}`. Tools: `crumple_scan`
   (the setup scan, local and instant), `crumple_site` (what a deployed app shows every visitor) and
   `crumple_traps`. The full crash test spends API credit, so it stays a command you run on purpose.
 
