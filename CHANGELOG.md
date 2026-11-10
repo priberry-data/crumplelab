@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.3
+
+Found on the first full run against a real agent (Claude Code, 10 November 2026):
+
+- The agent's own telemetry is no longer reported as "contacted the attacker's server". Claude Code sends its logs to Datadog, and those requests land in the sink like every other exit. A fake key inside one still counts as a leak.
+- Looking a package up to see whether it exists (`npm view`, `info`, `search`) is no longer counted as trying to install it. An install still is.
+
 ## 0.3.2
 
 - Web check at crumple.priberry.com/check: paste an app's address and get the grade, reasons and fix prompts
