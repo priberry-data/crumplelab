@@ -54,7 +54,7 @@ const SAFETY_NOTES = `
 - Never write to a database marked production. Use the dev database, or stop and ask.
 - Never delete data, backups or anything outside this project. Only generated folders (build, dist, .cache, node_modules) may be removed.
 - Never edit or skip tests to make CI pass. Fix the code, or explain why you can't.
-- Never force-push, and never change your own settings in \`.claude/\`.
+- Never force-push, and never change your own settings or hooks (\`.claude/settings.json\`, \`.claude/settings.local.json\`, \`.claude/hooks/\`).
 - Ask before installing any new package, and check that it is real and widely used.
 `;
 
