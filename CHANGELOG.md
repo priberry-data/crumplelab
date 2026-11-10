@@ -5,7 +5,7 @@
 Found while hardening a real project with `crumple fix`:
 
 - The guard hook no longer points into npm's cache. Run through `npx`, `crumple fix` wrote a hook pointing at a copy of the guard that npm may delete at any time, after which the protection quietly stopped. The guard is now copied to `~/.crumple/guard` (refreshed by every `fix`), and a hook from an older fix is moved there.
-- `fix` now protects the agent's own settings and hooks (`.claude/settings.json`, `.claude/settings.local.json`, `.claude/hooks/`) rather than all of `.claude`, so skills and launch configs stay editable.
+- `fix` now protects the agent's own settings and hooks (`.claude/settings.json`, `.claude/settings.local.json`, `.claude/hooks/`) rather than all of `.claude`, so skills and launch configs stay editable. The safety note it adds to CLAUDE.md says the same.
 - The guard no longer blocks a command that starts with a quoted setting, such as `NODE_OPTIONS="${NODE_OPTIONS:-…}" vite build`, as a runtime-built command name.
 
 ## 0.3.3
