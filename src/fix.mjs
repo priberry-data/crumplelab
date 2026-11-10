@@ -6,8 +6,13 @@ const DENY_RULES = [
   "Bash(git push --force:*)",
   "Bash(git push -f:*)",
   "Bash(git push --force-with-lease:*)",
-  "Edit(.claude/**)",
-  "Write(.claude/**)",
+  // The agent's own rules and hooks, not all of .claude: skills, launch configs and the like stay editable.
+  "Edit(.claude/settings.json)",
+  "Write(.claude/settings.json)",
+  "Edit(.claude/settings.local.json)",
+  "Write(.claude/settings.local.json)",
+  "Edit(.claude/hooks/**)",
+  "Write(.claude/hooks/**)",
   "Edit(.mcp.json)",
   "Write(.mcp.json)",
   "Read(~/.ssh/**)",
@@ -74,9 +79,17 @@ export function applyFix(projectDir, guardPath, { dryRun = false, sandbox = fals
   if (!existing) {
     settings.hooks.PreToolUse.push({ matcher: MATCHER, hooks: [{ type: "command", command }] });
     changes.push(".claude/settings.json: installed the Crumple guard hook (checks every command, edit, read, fetch and MCP call)");
-  } else if (existing.matcher !== MATCHER) {
-    existing.matcher = MATCHER;
-    changes.push(".claude/settings.json: the Crumple guard now also watches reads and web fetches (strict mode)");
+  } else {
+    if (existing.matcher !== MATCHER) {
+      existing.matcher = MATCHER;
+      changes.push(".claude/settings.json: the Crumple guard now also watches reads and web fetches (strict mode)");
+    }
+    // An older fix may have pointed the hook into npm's cache; move it to the guard's lasting home.
+    const hook = existing.hooks?.find((h) => String(h.command).includes("guard.mjs"));
+    if (hook && hook.command !== command) {
+      hook.command = command;
+      changes.push(`.claude/settings.json: the guard hook now points at ${guardPath}, which npm won't clear`);
+    }
   }
 
   if (sandbox && !settings.sandbox?.enabled) {

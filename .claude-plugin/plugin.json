@@ -1,6 +1,6 @@
 {
   "name": "crumple",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Find out whether your AI coding agent can be hijacked, and harden it. Local scan, no key, nothing leaves the machine.",
   "author": {
     "name": "Priberry",

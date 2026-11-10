@@ -227,3 +227,12 @@ test("reads install scripts from the lockfile and scans code before it runs", ()
   fs.writeFileSync(path.join(D, "package-lock.json"), JSON.stringify({ packages: { "": {}, "node_modules/esbuild": { hasInstallScript: true } } }));
   allowed(b("npm install"));
 });
+
+test("a quoted setting before a command is a setting, not a hidden command name", () => {
+  // Found on a real project: NODE_OPTIONS="${NODE_OPTIONS:-…}" vite build was blocked as a runtime-built command.
+  assert.deepEqual(parse('NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=6144}" vite build').commands[0].argv, ["vite", "build"]);
+  allowed(bash('NODE_OPTIONS="--max-old-space-size=6144" vite build'));
+  allowed(bash("FOO='a b' node x.mjs"));
+  blocked(bash('"$CMD" --flag'));
+  blocked(bash('FOO="a" $(echo rm) -rf x'));
+});

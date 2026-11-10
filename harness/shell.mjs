@@ -12,10 +12,15 @@ export function parse(input) {
   let expectHeredocDelim = false;
   let word = null;
   let quotedPart = false;
+  // The unquoted text a word starts with, so NAME="$x" still reads as an assignment.
+  let lead = null;
+  const markQuote = () => {
+    if (!quotedPart && lead === null) lead = word ?? "";
+  };
   let i = 0;
   const push = () => {
     if (word !== null) {
-      tokens.push({ type: "word", value: word, quoted: quotedPart });
+      tokens.push({ type: "word", value: word, quoted: quotedPart, lead: quotedPart ? lead : word });
       if (expectHeredocDelim) {
         pendingHeredocs.push({ tok: tokens[tokens.length - 2], delim: word });
         expectHeredocDelim = false;
@@ -23,6 +28,7 @@ export function parse(input) {
     }
     word = null;
     quotedPart = false;
+    lead = null;
   };
   const add = (s) => (word = (word ?? "") + s);
 
@@ -58,6 +64,7 @@ export function parse(input) {
       continue;
     }
     if (ch === "'") {
+      markQuote();
       const end = input.indexOf("'", i + 1);
       if (end < 0) return { error: "unclosed single quote" };
       add(input.slice(i + 1, end));
@@ -66,6 +73,7 @@ export function parse(input) {
       continue;
     }
     if (input.startsWith("$'", i)) {
+      markQuote();
       let j = i + 2;
       let buf = "";
       while (j < input.length && input[j] !== "'") {
@@ -91,6 +99,7 @@ export function parse(input) {
       continue;
     }
     if (ch === '"') {
+      markQuote();
       let j = i + 1;
       let buf = "";
       while (j < input.length && input[j] !== '"') {
@@ -230,7 +239,7 @@ export function parse(input) {
         cur.redirects.push({ op: t.value, target: target.value, body: t.body });
         k++;
       }
-    } else if (!cur.argv.length && !t.quoted && /^[A-Za-z_][A-Za-z0-9_]*=/.test(t.value)) cur.assigns.push(t.value);
+    } else if (!cur.argv.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(t.lead ?? "")) cur.assigns.push(t.value);
     else cur.argv.push(t.value);
   }
   flush();

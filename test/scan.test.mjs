@@ -111,3 +111,16 @@ test("setup pins the version and undoes cleanly", async () => {
   setup({ ...opts, undo: true });
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, ".cursor/mcp.json"), "utf8")).mcpServers, {});
 });
+
+test("crumple fix leaves skills editable and moves an old guard path to the lasting one", () => {
+  const { proj } = fixture();
+  applyFix(proj, "/Users/x/.npm/_npx/abc/node_modules/crumplelab/harness/guard.mjs");
+  const changes = applyFix(proj, "/Users/x/.crumple/guard/guard.mjs");
+  const s = JSON.parse(fs.readFileSync(path.join(proj, ".claude/settings.json"), "utf8"));
+  assert.ok(!s.permissions.deny.includes("Edit(.claude/**)"), "skills and launch configs stay editable");
+  assert.ok(s.permissions.deny.includes("Edit(.claude/settings.json)") && s.permissions.deny.includes("Write(.claude/hooks/**)"));
+  const hooks = s.hooks.PreToolUse.flatMap((h) => h.hooks).filter((h) => h.command.includes("guard.mjs"));
+  assert.equal(hooks.length, 1);
+  assert.equal(hooks[0].command, 'node "/Users/x/.crumple/guard/guard.mjs"');
+  assert.ok(changes.some((c) => c.includes("npm won't clear")));
+});

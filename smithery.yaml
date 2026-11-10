@@ -5,4 +5,4 @@ startCommand:
     type: object
     properties: {}
   commandFunction: |-
-    (config) => ({ command: 'npx', args: ['-y', 'crumplelab@0.3.3', 'mcp'] })
+    (config) => ({ command: 'npx', args: ['-y', 'crumplelab@0.3.4', 'mcp'] })

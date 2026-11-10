@@ -197,7 +197,15 @@ if (positionals[0] === "mcp") {
     console.log(c.dim(`\nWrote ${path.relative(process.cwd(), file)}. The guard now refuses tools that aren't in it.`));
   }
 } else if (positionals[0] === "fix") {
-  const changes = applyFix(process.cwd(), path.join(ROOT, "harness", "guard.mjs"), { dryRun: opt["dry-run"], sandbox: opt.sandbox });
+  // The hook must point at a guard that stays put. Run through npx, Crumple itself lives in npm's
+  // cache, which npm clears whenever it likes; a hook pointing there would quietly stop protecting.
+  // So the guard is copied to ~/.crumple/guard (refreshed on every fix) and the hook points there.
+  const guardDir = path.join(process.env.CRUMPLE_HOME ?? path.join(os.homedir(), ".crumple"), "guard");
+  if (!opt["dry-run"]) {
+    fs.mkdirSync(guardDir, { recursive: true });
+    for (const f of ["guard.mjs", "shell.mjs"]) fs.copyFileSync(path.join(ROOT, "harness", f), path.join(guardDir, f));
+  }
+  const changes = applyFix(process.cwd(), path.join(guardDir, "guard.mjs"), { dryRun: opt["dry-run"], sandbox: opt.sandbox });
   console.log(`\n${c.bold("Crumple fix")}${opt["dry-run"] ? c.dim(" (dry run, nothing written)") : ""}\n`);
   if (!changes.length) console.log(c.green("Already hardened. Nothing to change."));
   for (const ch of changes) console.log(`  ${c.green("+")} ${ch}`);
