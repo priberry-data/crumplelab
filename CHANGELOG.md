@@ -2,6 +2,8 @@
 
 ## 0.3.3
 
+- A welcome screen: `npx crumplelab` on its own, in a wide terminal, now shows a pixel-art crash-test marker an instant before the wall, with the three commands that matter. `--help`, pipes, CI, `NO_COLOR` and narrow windows still get the plain usage.
+
 Found on the first full run against a real agent (Claude Code, 10 November 2026):
 
 - The agent's own telemetry is no longer reported as "contacted the attacker's server". Claude Code sends its logs to Datadog, and those requests land in the sink like every other exit. A fake key inside one still counts as a leak.

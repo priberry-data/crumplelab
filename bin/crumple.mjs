@@ -14,6 +14,7 @@ import { detectClaudeSetup } from "../src/detect.mjs";
 import { summarize, headline, writeReport, fmtTime } from "../src/report.mjs";
 import { applyFix } from "../src/fix.mjs";
 import { banner } from "../src/banner.mjs";
+import { welcome } from "../src/welcome.mjs";
 import { boot, progress, spin } from "../src/ui.mjs";
 import { crashBox, diagnostics, issueUrl, EMAIL } from "../src/bug.mjs";
 
@@ -75,6 +76,16 @@ process.on("unhandledRejection", crashed);
 
 const SEVERITY_OF = (s) => ({ critical: 40, high: 15, medium: 5, low: 1 })[s] ?? 0;
 const c = { red: (s) => `\x1b[31m${s}\x1b[0m`, green: (s) => `\x1b[32m${s}\x1b[0m`, yellow: (s) => `\x1b[33m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
+
+// Run on its own in a wide terminal, Crumple says hello with its welcome screen and stops there;
+// anywhere it can't be drawn (pipe, CI, NO_COLOR, narrow window) the plain usage below is printed instead.
+if (!positionals[0] && !opt.help && !opt.json && !opt.prompt) {
+  const hello = welcome({ version: VERSION });
+  if (hello) {
+    process.stdout.write(hello);
+    process.exit(0);
+  }
+}
 
 // The guard speaks JSON to the agent over stdout, so it (and any machine-readable output) never gets the banner.
 if (!["guard", "audit", "mcp"].includes(positionals[0]) && !opt.json && !opt.prompt) process.stdout.write(banner({ version: VERSION, tagline: "the crash test for AI coding agents" }));
