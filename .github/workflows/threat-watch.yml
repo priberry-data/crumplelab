@@ -1,5 +1,5 @@
 # Every morning (09:00 India time): new advisories, CVEs and news about attacks on AI coding agents.
-# When there's something new it opens an issue labelled threat-watch, and GitHub emails the repo owner.
+# When there's something new it adds a comment to the one open threat-watch issue (opening it if needed), and GitHub emails the repo owner.
 name: threat watch
 on:
   schedule:
@@ -19,12 +19,15 @@ jobs:
       - run: node scripts/threat-watch.mjs --days 1 > digest.md
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - name: Open an issue when there is news
+      - name: Add today's news to the one threat-watch issue
         run: |
-          if grep -q '^## ' digest.md; then
-            gh issue create --title "Threat watch $(date -u +%F)" --label threat-watch --body-file digest.md
-          else
-            echo "Nothing new today."
+          if ! grep -q '^## ' digest.md; then echo "Nothing new today."; exit 0; fi
+          n=$(gh issue list --label threat-watch --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -z "$n" ]; then
+            gh issue create --title "Threat watch (daily digest)" --label threat-watch --body "One issue for the daily threat watch. Each day's news is added below as a comment."
+            n=$(gh issue list --label threat-watch --state open --limit 1 --json number --jq '.[0].number')
           fi
+          { echo "### $(date -u +%F)"; echo; cat digest.md; } > comment.md
+          gh issue comment "$n" --body-file comment.md
         env:
           GH_TOKEN: ${{ github.token }}
