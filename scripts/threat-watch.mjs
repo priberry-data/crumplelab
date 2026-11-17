@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The daily threat watch: what's new in attacks on AI coding agents, from public sources only.
-// Prints a Markdown digest (empty when there's nothing new). The GitHub workflow turns it into an issue,
+// Prints a Markdown digest (empty when there's nothing new). The GitHub workflow adds it to the one threat-watch issue,
 // so new advisories and attacks land in the Priberry inbox and become candidate traps.
 //   node scripts/threat-watch.mjs [--days 1]
 import { parseArgs } from "node:util";
@@ -13,6 +13,8 @@ const day = (d) => d.toISOString().slice(0, 10);
 const PACKAGES = ["@anthropic-ai/claude-code", "@openai/codex", "@google/gemini-cli", "@modelcontextprotocol/sdk", "mcp-remote", "@modelcontextprotocol/inspector", "@github/copilot"];
 const CVE_WORDS = ["Claude Code", "Codex CLI", "Gemini CLI", "Model Context Protocol", "MCP server", "prompt injection", "Cursor", "GitHub Copilot", "coding agent"];
 const NEWS_WORDS = ["prompt injection", "MCP vulnerability", "Claude Code security", "AI agent exploit", "coding agent attack", "slopsquatting"];
+// Hacker News search matches loosely (story text, partial words), so keep only stories whose title is about security.
+const SECURITY_TITLE = /inject|vulnerab|exploit|attack|\bcve\b|secur|secret|leak|malicious|malware|slopsquat|typosquat|backdoor|hijack|jailbreak|exfiltrat|sandbox|red.?team|breach|compromis|poison/i;
 
 const get = async (url, headers = {}) => {
   const r = await fetch(url, { headers: { "user-agent": "crumple-threat-watch", ...headers } });
@@ -62,7 +64,7 @@ const failures = [];
   for (const word of NEWS_WORDS) {
     try {
       const res = await get(`https://hn.algolia.com/api/v1/search_by_date?tags=story&query=${encodeURIComponent(word)}&numericFilters=created_at_i>${Math.floor(since / 1000)}`);
-      for (const h of res.hits ?? []) if (h.url) rows.set(h.url, `- [${h.title}](${h.url}) · ${h.points ?? 0} points · [discussion](https://news.ycombinator.com/item?id=${h.objectID})`);
+      for (const h of res.hits ?? []) if (h.url && SECURITY_TITLE.test(h.title ?? "")) rows.set(h.url, `- [${h.title}](${h.url}) · ${h.points ?? 0} points · [discussion](https://news.ycombinator.com/item?id=${h.objectID})`);
     } catch (e) { failures.push(`Hacker News (${word}): ${e.message}`); }
   }
   if (rows.size) sections.push(`## In the news\n\n${[...rows.values()].join("\n")}`);
