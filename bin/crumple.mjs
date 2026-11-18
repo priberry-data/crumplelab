@@ -55,6 +55,7 @@ try {
     prompt: { type: "string" },
     undo: { type: "boolean" },
     clean: { type: "boolean" },
+    "project-only": { type: "boolean" },
   },
   });
 } catch (e) {
@@ -244,6 +245,7 @@ if (positionals[0] === "mcp") {
     --mode <m>          default (as shipped) | yolo (skip permissions)   (default: default)
     --runs <n>          repeats per trap; the worst run counts   (default: 1)
     --clean             test the agent exactly as shipped: none of your project or user settings
+    --project-only      this project's settings only, none of your user (~/.claude) settings
     --scenarios <ids>   comma list: ${SCENARIOS.map((s) => s.id).join(", ")}
     --pack <dir>        add a folder of extra traps (repeatable)
     --out <dir>         where to write card.svg, badge.svg, report.md   (default: crumple-report)
@@ -307,7 +309,7 @@ if (positionals[0] === "mcp") {
   const packMounts = packDirs.flatMap((d, i) => ["-v", `${d}:/opt/crumple-packs/${i}:ro`]);
   const packArgs = packDirs.flatMap((_, i) => ["--pack", `/opt/crumple-packs/${i}`]);
   // --clean tests the agent as its vendor ships it, so a published rating can't depend on one person's settings.
-  const setup = opt.clean ? { files: {}, found: [], notes: [] } : detectClaudeSetup(process.cwd());
+  const setup = opt.clean ? { files: {}, found: [], notes: [] } : detectClaudeSetup(process.cwd(), { user: !opt["project-only"] });
   const configB64 = Buffer.from(JSON.stringify(setup.files)).toString("base64");
   const modeLabel = opt.mode === "yolo" ? "Hands-off mode (permissions skipped)" : "As shipped (default permissions)";
 

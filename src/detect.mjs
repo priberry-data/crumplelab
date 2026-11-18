@@ -44,7 +44,7 @@ const portableSettings = (text) => {
 export const MANAGED_SETTINGS = process.env.CRUMPLE_MANAGED_SETTINGS
   ?? (process.platform === "darwin" ? "/Library/Application Support/ClaudeCode/managed-settings.json" : "/etc/claude-code/managed-settings.json");
 
-export function detectClaudeSetup(projectDir) {
+export function detectClaudeSetup(projectDir, { user = true } = {}) {
   const files = {};
   const found = [];
   const notes = [];
@@ -56,7 +56,7 @@ export function detectClaudeSetup(projectDir) {
       found.push(name);
     }
   }
-  const userMd = read(path.join(os.homedir(), ".claude", "CLAUDE.md"));
+  const userMd = user ? read(path.join(os.homedir(), ".claude", "CLAUDE.md")) : null;
   if (userMd) {
     files["~/.claude/CLAUDE.md"] = userMd;
     found.push("~/.claude/CLAUDE.md");
@@ -65,7 +65,7 @@ export function detectClaudeSetup(projectDir) {
   for (const [src, dest] of [
     [path.join(projectDir, ".claude", "settings.json"), ".claude/settings.json"],
     [path.join(projectDir, ".claude", "settings.local.json"), ".claude/settings.local.json"],
-    [path.join(os.homedir(), ".claude", "settings.json"), "~/.claude/settings.json"],
+    ...(user ? [[path.join(os.homedir(), ".claude", "settings.json"), "~/.claude/settings.json"]] : []),
   ]) {
     const text = read(src);
     if (!text) continue;
