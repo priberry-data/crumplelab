@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { SCENARIOS, loadPacks } from "../harness/scenarios.mjs";
 import { AGENTS } from "../harness/agents.mjs";
 import { detectClaudeSetup } from "../src/detect.mjs";
-import { summarize, headline, writeReport, fmtTime } from "../src/report.mjs";
+import { summarize, headline, writeReport, fmtTime, modelOf } from "../src/report.mjs";
 import { applyFix } from "../src/fix.mjs";
 import { banner } from "../src/banner.mjs";
 import { welcome } from "../src/welcome.mjs";
@@ -54,6 +54,7 @@ try {
     mine: { type: "boolean" },
     prompt: { type: "string" },
     undo: { type: "boolean" },
+    clean: { type: "boolean" },
   },
   });
 } catch (e) {
@@ -242,6 +243,7 @@ if (positionals[0] === "mcp") {
     --agent <id>        claude | codex | gemini | mock-reckless | mock-careful   (default: claude)
     --mode <m>          default (as shipped) | yolo (skip permissions)   (default: default)
     --runs <n>          repeats per trap; the worst run counts   (default: 1)
+    --clean             test the agent exactly as shipped: none of your project or user settings
     --scenarios <ids>   comma list: ${SCENARIOS.map((s) => s.id).join(", ")}
     --pack <dir>        add a folder of extra traps (repeatable)
     --out <dir>         where to write card.svg, badge.svg, report.md   (default: crumple-report)
@@ -304,7 +306,8 @@ if (positionals[0] === "mcp") {
   // Packs are mounted read-only and loaded by the same code inside the container.
   const packMounts = packDirs.flatMap((d, i) => ["-v", `${d}:/opt/crumple-packs/${i}:ro`]);
   const packArgs = packDirs.flatMap((_, i) => ["--pack", `/opt/crumple-packs/${i}`]);
-  const setup = detectClaudeSetup(process.cwd());
+  // --clean tests the agent as its vendor ships it, so a published rating can't depend on one person's settings.
+  const setup = opt.clean ? { files: {}, found: [], notes: [] } : detectClaudeSetup(process.cwd());
   const configB64 = Buffer.from(JSON.stringify(setup.files)).toString("base64");
   const modeLabel = opt.mode === "yolo" ? "Hands-off mode (permissions skipped)" : "As shipped (default permissions)";
 
@@ -315,7 +318,7 @@ if (positionals[0] === "mcp") {
     ["traps", `${scenarios.length} armed`],
   ]);
   console.log(`\n${c.bold("Crumple agent crash test")} · ${agent.label} · ${modeLabel}`);
-  console.log(c.dim(setup.found.length ? `Your setup: ${setup.found.join(", ")}` : agent.mock ? "Scripted test agent" : "No project or user config found; testing default settings"));
+  console.log(c.dim(setup.found.length ? `Your setup: ${setup.found.join(", ")}` : agent.mock ? "Scripted test agent" : opt.clean ? "Clean run: none of your settings carried in; testing the agent as shipped" : "No project or user config found; testing default settings"));
   for (const n of setup.notes) console.log(c.dim(`Note: ${n}`));
   console.log("");
 
@@ -359,7 +362,15 @@ if (positionals[0] === "mcp") {
 
   const sum = summarize(results, scenarios);
   const outDir = path.resolve(opt.out);
-  writeReport(outDir, sum, { agentLabel: agent.label, modeLabel, setupFound: setup.found, notes: setup.notes }, results);
+  // Every report names what was tested: the agent's version as installed in the container, the model it used, the date
+  // and how many times each trap ran, so anyone can tell exactly what a score is about and rerun it.
+  const agentVersion = agent.mock ? null : (() => {
+    const bin = agent.command("", { mode: "default" }).cmd;
+    const v = spawnSync("docker", ["run", "--rm", "--entrypoint", bin, IMAGE, "--version"], { encoding: "utf8", timeout: 60000 });
+    return v.status === 0 ? (v.stdout.trim().split("\n")[0] || null) : null;
+  })();
+  const meta = { agentLabel: agent.label, modeLabel, setupFound: setup.found, notes: setup.notes, clean: Boolean(opt.clean), agentVersion, model: modelOf(results), date: new Date().toISOString().slice(0, 10), runs: Number(opt.runs), crumple: VERSION };
+  writeReport(outDir, sum, meta, results);
 
   console.log(`\n${c.bold(headline(sum, agent.label))}`);
   console.log(`Score: ${sum.survived}/${sum.total} traps survived${sum.hijacked ? ` · ${sum.hijacked} hijacked but contained` : ""}${sum.untested ? c.yellow(` · ${sum.untested} didn't run, so they don't count`) : ""}\n`);

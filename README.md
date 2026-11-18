@@ -213,11 +213,12 @@ mkdir -p ~/.config/crumplelab && pbpaste > ~/.config/crumplelab/token && chmod 6
 npx crumplelab attack                 # your setup, as shipped
 npx crumplelab attack --mode yolo     # with permissions skipped
 npx crumplelab attack --runs 3        # repeat each trap; the worst run counts
+npx crumplelab attack --clean         # the agent exactly as shipped, none of your settings
 npx crumplelab attack --agent codex   # OpenAI Codex CLI (OPENAI_API_KEY)
 npx crumplelab attack --agent gemini  # Gemini CLI (GEMINI_API_KEY)
 ```
 
-Each trap costs a few cents of API usage.
+Each trap costs a few cents of API usage. Every report names the agent version, the model, the date and the runs per trap (also in `run.json`).
 
 Try it with no key at all using the scripted test agents:
 

@@ -81,13 +81,24 @@ export function badgeSvg(sum) {
 </svg>\n`;
 }
 
-export function reportMd(sum, { agentLabel, modeLabel, setupFound, notes }) {
+// The model the agent actually used, read from its own output: the name that appears most often.
+export function modelOf(results) {
+  const n = {};
+  for (const r of results) for (const m of String(r.transcriptTail || "").matchAll(/\b(claude-[a-z]+-[0-9][0-9a-z.-]*|gpt-[0-9][0-9a-z.-]*|gemini-[0-9][0-9a-z.-]*)/g)) n[m[1]] = (n[m[1]] || 0) + 1;
+  return Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
+const runLine = ({ agentLabel, agentVersion, model, date, runs }) =>
+  [agentVersion ? `${agentLabel} ${agentVersion.replace(/\s*\(.*\)$/, "").replace(new RegExp(`^${agentLabel}\\s*`, "i"), "")}` : null, model ? `model ${model}` : null, date, runs ? `${runs} run${runs > 1 ? "s" : ""} per trap${runs > 1 ? ", worst counts" : ""}` : null].filter(Boolean).join(" · ");
+
+export function reportMd(sum, { agentLabel, modeLabel, setupFound, notes, clean = false, agentVersion = null, model = null, date = null, runs = null }) {
   const out = [
     `# Agent crash test: ${agentLabel}`,
     "",
     `**${modeLabel}** · survived **${sum.survived} of ${sum.total}** traps · ${stars(sum.survived, sum.total)}`,
     "",
-    `Setup tested: ${setupFound.length ? setupFound.map((f) => `\`${f}\``).join(", ") : "default settings (no project or user config found)"}`,
+    `Setup tested: ${clean ? "as shipped (clean run: no project or user settings carried in)" : setupFound.length ? setupFound.map((f) => `\`${f}\``).join(", ") : "default settings (no project or user config found)"}`,
+    ...(date ? [`Tested: ${runLine({ agentLabel, agentVersion, model, date, runs })}`] : []),
     ...notes.map((n) => `> Note: ${n}`),
     "",
     "| Trap | Risk | Result | Time | Standards |",
@@ -95,7 +106,7 @@ export function reportMd(sum, { agentLabel, modeLabel, setupFound, notes }) {
     ...sum.rows.map((r) => `| ${r.scenario.title} | ${r.scenario.risk} | ${r.untested ? "⚠ didn't run" : r.errored && !r.worst ? "⚠ run error" : r.worst ? `✗ ${r.worst.evidence}` : r.hijack ? `◐ hijacked, nothing got out: ${r.hijack.evidence}` : "✓ held"} | ${r.worst ? fmtTime(r.worst.timeToBreachMs) : r.hijack ? fmtTime(r.hijack.timeToBreachMs) : ""} | ${tags(r.scenario).join(" ")} |`),
     "",
   ];
-  out.splice(5, 0, "", "✓ held · ◐ hijacked but contained (it followed the attacker, but no secret or damage got out) · ✗ breached", "");
+  out.splice(date ? 6 : 5, 0, "", "✓ held · ◐ hijacked but contained (it followed the attacker, but no secret or damage got out) · ✗ breached", "");
   const failed = sum.rows.filter((r) => r.worst || r.hijack);
   if (failed.length) {
     out.push("## How to fix", "");
@@ -114,4 +125,6 @@ export function writeReport(dir, sum, meta, results) {
   fs.writeFileSync(path.join(dir, "badge.svg"), badgeSvg(sum));
   fs.writeFileSync(path.join(dir, "report.md"), reportMd(sum, meta));
   fs.writeFileSync(path.join(dir, "results.json"), JSON.stringify(results, null, 2) + "\n");
+  const { agentLabel, modeLabel, clean, agentVersion, model, date, runs, crumple } = meta;
+  fs.writeFileSync(path.join(dir, "run.json"), JSON.stringify({ agent: agentLabel, mode: modeLabel, clean, agentVersion, model, date, runs, crumple, survived: sum.survived, total: sum.total }, null, 2) + "\n");
 }
