@@ -58,6 +58,7 @@ const redact = (s) => String(s).replace(new RegExp(SECRET_VALUES.source, "g"), (
 
 export function scan(projectDir, { home = os.homedir() } = {}) {
   const findings = [];
+  const packages = []; // MCP servers started from a package registry, for the opt-in `--cves` check
   const add = (severity, where, title, why, fix) => findings.push({ severity, where, title, why, fix });
   const rel = (p) => (p.startsWith(projectDir + path.sep) ? path.relative(projectDir, p) : p.startsWith(home + path.sep) ? "~/" + path.relative(home, p) : p);
   const P = (...x) => path.join(projectDir, ...x);
@@ -130,6 +131,8 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
       const cmd = parts.filter(Boolean).join(" ");
       if (/\b(npx|bunx|pnpm dlx|uvx)\b/.test(cmd)) {
         const pkg = parts.slice(1).find((a) => !String(a).startsWith("-") && !/^(dlx|x)$/.test(a)) ?? "";
+        const spec = packageSpec(pkg, /\buvx\b/.test(cmd) ? "PyPI" : "npm");
+        if (spec) packages.push({ where, ...spec });
         if (!/@\d/.test(pkg.replace(/^@[^/]+\//, "")) || /@latest$/.test(pkg)) add("high", where, `MCP server runs whatever version is newest (${pkg || cmd})`, "If that package is ever compromised or sold, your agent runs the new code with your keys the next time it starts (MCP rug pull).", `Pin an exact version, for example ${pkg.replace(/@latest$/, "")}@1.2.3, and run \`crumple lock\`.`);
       }
       const blob = JSON.stringify({ env: srv.env ?? srv.environment, args: parts.slice(1), headers: srv.headers, url: srv.url });
@@ -188,10 +191,29 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
     if (scripts.length) add("medium", "package-lock.json", `${scripts.length} dependencies run install scripts (${scripts.slice(0, 4).join(", ")}${scripts.length > 4 ? "…" : ""})`, "Install scripts run with your keys in reach; this is how Shai-Hulud and the Nx attack spread.", "Set `ignore-scripts=true` in .npmrc and allow only the few that need it.");
   }
 
+  return { ...grade(findings), mcpPackages: packages };
+}
+
+// Sorts findings and scores them. Used again after the opt-in advisory check adds findings.
+export function grade(findings) {
   const order = Object.keys(SEVERITY);
   findings.sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity));
   const score = Math.max(0, 100 - findings.reduce((n, f) => n + SEVERITY[f.severity], 0));
   return { score, grade: score >= 90 ? "A" : score >= 75 ? "B" : score >= 55 ? "C" : score >= 35 ? "D" : "F", findings };
+}
+
+// "@scope/name@1.2.3" or "name==1.2.3" (uvx) → { ecosystem, name, version }. version is null when not pinned.
+export function packageSpec(pkg, ecosystem) {
+  const s = String(pkg || "").trim();
+  if (!s || /^[./~]/.test(s) || /^(https?|git|file):/.test(s)) return null;
+  if (ecosystem === "PyPI") {
+    const m = s.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?(?:==([\w.+-]+))?$/);
+    return m ? { ecosystem, name: m[1].toLowerCase(), version: m[2] ?? null } : null;
+  }
+  const m = s.match(/^((?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*)(?:@(.+))?$/i);
+  if (!m) return null;
+  const v = m[2];
+  return { ecosystem, name: m[1], version: v && /^\d+\.\d+\.\d+([-+][\w.-]+)?$/.test(v) ? v : null };
 }
 
 export function toSarif(result) {

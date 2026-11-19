@@ -11,6 +11,7 @@ Your AI agent can read your `.env`, run shell commands and touch your databases.
 
 ```bash
 npx crumplelab scan      # 5 seconds, no API key, nothing leaves your machine
+npx crumplelab scan --cves   # also check your MCP servers against published vulnerabilities
 npx crumplelab attack    # the real crash test, in a throwaway container
 npx crumplelab fix       # harden it, then attack again to prove it
 npx crumplelab site myapp.lovable.app   # built your app with an AI app builder? check what it leaks

@@ -48,6 +48,7 @@ try {
     json: { type: "boolean" },
     sarif: { type: "string" },
     "fail-on": { type: "string" },
+    cves: { type: "boolean" },
     pack: { type: "string", multiple: true, default: [] },
     help: { type: "boolean", short: "h" },
     version: { type: "boolean", short: "v" },
@@ -121,12 +122,20 @@ if (positionals[0] === "mcp") {
   for (const s of all) console.log(`${c.bold(s.id.padEnd(20))} ${s.title}${s.pack ? c.dim(` [pack: ${s.pack}]`) : ""}\n${" ".repeat(21)}${c.dim(`${s.risk} · ${tags(s).join(" ")}`)}`);
   console.log(`\n${all.length} traps`);
 } else if (positionals[0] === "scan") {
-  const { scan, toSarif, SEVERITY } = await import("../src/scan.mjs");
-  const result = opt.json || opt.sarif ? scan(process.cwd()) : await spin("reading your agent setup the way an attacker would", async () => {
+  const { scan, grade, toSarif, SEVERITY } = await import("../src/scan.mjs");
+  const quiet = opt.json || opt.sarif;
+  let result = quiet ? scan(process.cwd()) : await spin("reading your agent setup the way an attacker would", async () => {
     const r = scan(process.cwd());
     await new Promise((ok) => setTimeout(ok, 350));
     return r;
   });
+  let cves = null;
+  if (opt.cves && result.mcpPackages.length) {
+    const { checkAdvisories } = await import("../src/advisories.mjs");
+    const run = () => checkAdvisories(result.mcpPackages);
+    cves = quiet ? await run() : await spin(`checking ${result.mcpPackages.length} MCP servers against published vulnerabilities (osv.dev)`, run);
+    result = { ...result, ...grade([...result.findings, ...cves.findings]), advisories: { checked: cves.checked, errors: cves.errors } };
+  }
   if (opt.sarif) fs.writeFileSync(opt.sarif, JSON.stringify(toSarif(result), null, 2) + "\n");
   if (opt.json) console.log(JSON.stringify(result, null, 2));
   else {
@@ -138,7 +147,9 @@ if (positionals[0] === "mcp") {
       console.log(`         ${c.green("Fix:")} ${f.fix}\n`);
     }
     const color = result.score >= 75 ? c.green : result.score >= 55 ? c.yellow : c.red;
-    console.log(`Safe Setup score: ${color(`${result.score}/100 (${result.grade})`)} · ${result.findings.length} findings · nothing left this machine`);
+    for (const e of cves?.errors ?? []) console.log(c.dim(`Couldn't check ${e}`));
+    console.log(`Safe Setup score: ${color(`${result.score}/100 (${result.grade})`)} · ${result.findings.length} findings · ${cves ? `${cves.checked} MCP servers checked against osv.dev (only package names and versions were sent)` : "nothing left this machine"}`);
+    if (!opt.cves && result.mcpPackages.length) console.log(c.dim(`Add --cves to check your ${result.mcpPackages.length} MCP servers against published vulnerabilities (sends only package names and versions to osv.dev).`));
     console.log(c.dim("Next: `crumple fix` to harden, then `crumple attack` to prove it."));
   }
   const failOn = opt["fail-on"];
@@ -227,7 +238,7 @@ if (positionals[0] === "mcp") {
 } else {
   if (opt.help || positionals[0] !== "attack") {
     console.log(`Usage: crumple attack [options]
-       crumple scan [--sarif f] [--fail-on high]   instant local audit of your agent setup (no key, no Docker)
+       crumple scan [--cves] [--sarif f] [--fail-on high]   instant local audit of your agent setup (no key, no Docker); --cves also checks MCP servers against osv.dev
        crumple setup [--dry-run] [--undo]       add Crumple to every AI coding app here (Cursor, VS Code, Windsurf, Claude, Codex, Gemini CLI, Cline, Kiro…)
        crumple site <url> [--mine] [--prompt N]  grade a deployed app (Lovable, Bolt, v0, Replit, Emergent, any site): leaked keys, open data, fix prompts
        crumple fix [--sandbox] [--managed] [--dry-run]   harden this project's agent setup, then attack again

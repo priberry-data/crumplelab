@@ -3,14 +3,14 @@
 // API credit, so it stays a command the person runs on purpose.
 import path from "node:path";
 import readline from "node:readline";
-import { scan } from "./scan.mjs";
+import { scan, grade } from "./scan.mjs";
 import { SCENARIOS } from "../harness/scenarios.mjs";
 
 const TOOLS = [
   {
     name: "crumple_scan",
-    description: "Audit an AI coding agent setup (Claude Code, Codex, Gemini CLI, Cursor, MCP config, hooks, CLAUDE.md/AGENTS.md, .env exposure) the way an attacker would. Local and instant: no key, no Docker, nothing leaves the machine. Returns a 0-100 Safe Setup score and findings, each with why it matters and the fix.",
-    inputSchema: { type: "object", properties: { path: { type: "string", description: "Project folder to scan. Defaults to the server's working directory." } }, additionalProperties: false },
+    description: "Audit an AI coding agent setup (Claude Code, Codex, Gemini CLI, Cursor, MCP config, hooks, CLAUDE.md/AGENTS.md, .env exposure) the way an attacker would. Local and instant: no key, no Docker, nothing leaves the machine. Returns a 0-100 Safe Setup score and findings, each with why it matters and the fix. With `cves: true` it also checks the MCP servers it finds (npx/uvx packages) against published vulnerabilities on osv.dev, sending only package names and versions.",
+    inputSchema: { type: "object", properties: { path: { type: "string", description: "Project folder to scan. Defaults to the server's working directory." }, cves: { type: "boolean", description: "Also check MCP server packages against osv.dev (goes online; sends only package names and versions)." } }, additionalProperties: false },
     annotations: { readOnlyHint: true },
   },
   {
@@ -32,7 +32,13 @@ const lastSite = new Map();
 async function call(name, args = {}) {
   if (name === "crumple_scan") {
     const dir = path.resolve(args.path || process.cwd());
-    return { project: dir, ...scan(dir), next: "Run `npx crumplelab fix` to harden, then `npx crumplelab attack` to prove it (needs Docker and an API key)." };
+    let result = scan(dir);
+    if (args.cves && result.mcpPackages.length) {
+      const { checkAdvisories } = await import("./advisories.mjs");
+      const cves = await checkAdvisories(result.mcpPackages);
+      result = { ...result, ...grade([...result.findings, ...cves.findings]), advisories: { checked: cves.checked, errors: cves.errors } };
+    }
+    return { project: dir, ...result, next: "Run `npx crumplelab fix` to harden, then `npx crumplelab attack` to prove it (needs Docker and an API key)." };
   }
   if (name === "crumple_site") {
     const { siteScan, compare } = await import("./site.mjs");

@@ -29,6 +29,7 @@ export const STANDARDS = {
   "invisible-text": { owasp: ["LLM01"], asi: ["ASI01", "ASI06"], atlas: ["AML.T0051"] },
   "auto-approve": { owasp: ["LLM01", "LLM06"], asi: ["ASI03"], atlas: ["AML.T0051"] },
   "mcp-output-poison": { owasp: ["LLM01", "LLM02"], asi: ["ASI02", "ASI04"], atlas: ["AML.T0051", "AML.T0053", "AML.T0057"] },
+  "mcp-file-attach": { owasp: ["LLM01", "LLM02", "LLM06"], asi: ["ASI02", "ASI04"], atlas: ["AML.T0051", "AML.T0053", "AML.T0057"] },
   "repo-hooks": { owasp: ["LLM03"], asi: ["ASI04", "ASI05"], atlas: ["AML.T0010"] },
 };
 

@@ -71,7 +71,7 @@ const failures = [];
 }
 
 if (sections.length) {
-  console.log(`New since ${day(since)}. For each item, ask: could an agent walk into this, and does Crumple have a trap for it? If not, it's a candidate trap.\n`);
+  console.log(`New since ${day(since)}. For each item, ask: could an agent walk into this, and does Crumple have a trap for it? If not, it's a candidate trap. For a vulnerable MCP server on npm or PyPI, `npx crumplelab scan --cves` already tells anyone running it.\n`);
   console.log(sections.join("\n\n"));
 }
 if (failures.length) console.log(`\n<details><summary>${failures.length} source(s) failed</summary>\n\n${failures.map((f) => `- ${f}`).join("\n")}\n</details>`);
