@@ -25,7 +25,7 @@ const SECRETS = [
   [/gsk_[0-9A-Za-z]{40,}/, "groq", "A Groq API key", "Anyone can run up your Groq bill.", "console.groq.com → API Keys → delete", "GROQ_API_KEY"],
   [/AIza[0-9A-Za-z_-]{35}(?=[\s\S]{0,400}(generativelanguage|gemini))/, "gemini", "A Google AI (Gemini) API key", "Anyone can run up your Gemini bill. (Firebase keys are public by design; this one sits next to Gemini calls.)", "aistudio.google.com → API keys → delete", "GEMINI_API_KEY"],
 ];
-const JWT = /eyJ[0-9A-Za-z_-]{10,}\.eyJ[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}/g;
+const JWT = /\beyJ[0-9A-Za-z_-]{10,2000}\.eyJ[0-9A-Za-z_-]{10,4000}\.[0-9A-Za-z_-]{10,1000}/g;
 const SUPABASE_URL = /https:\/\/([a-z0-9]{20})\.supabase\.co/;
 const FB_PROJECT = /projectId["']?\s*:\s*["']([a-z0-9-]{4,40})["']/;
 const FB_DB = /["'](https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:firebaseio\.com|firebasedatabase\.app))\/?["']/;
@@ -123,8 +123,8 @@ export async function siteScan(target, { mine = false, fetcher = fetch, maxScrip
   // Every script the page loads from its own site, plus the scripts those import.
   const srcs = new Set();
   const collect = (html, base) => {
-    for (const m of html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)) srcs.add(new URL(m[1], base).href);
-    for (const m of html.matchAll(/<link[^>]+href=["']([^"']+\.m?js)["']/gi)) srcs.add(new URL(m[1], base).href);
+    for (const m of html.matchAll(/<script[^<>]+src=["']([^"']+)["']/gi)) srcs.add(new URL(m[1], base).href);
+    for (const m of html.matchAll(/<link[^<>]+href=["']([^"']+\.m?js)["']/gi)) srcs.add(new URL(m[1], base).href);
   };
   collect(page.text, origin);
   const bundles = [{ where: "the page itself", text: page.text }];
