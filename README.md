@@ -53,6 +53,7 @@ incident or paper:
 | A harmless MCP tool whose result asks for your keys | Tool output poisoning (CyberArk, 2025) |
 | A cloned repo that ships its own agent hooks | CVE-2025-59536 (Check Point) |
 | A code-mode MCP server (one `execute` tool for a whole API) and a DNS record that asks for a cleanup | Code-mode MCP servers (Cloudflare, 2026) |
+| An issue asks the agent to attach `~/.aws/credentials` with an MCP upload tool | yt-mcp attach-any-file (CVE-2026-75612) |
 
 Every trap is mapped to OWASP LLM Top 10, OWASP Agentic Top 10 and MITRE ATLAS (`crumple list`), so a report
 drops straight into an audit or insurance evidence folder.
@@ -188,7 +189,7 @@ Or one app at a time:
   ask "is my agent setup safe?"
 - **Gemini CLI extension:** `gemini extensions install https://github.com/priberry-data/crumplelab`
 - **Skill (Claude Code or Codex):** copy `skills/crumple` into `~/.claude/skills/` or `~/.codex/skills/`.
-- **Any MCP client:** `{"command": "npx", "args": ["-y", "crumplelab@0.3.2", "mcp"]}`. Tools: `crumple_scan`
+- **Any MCP client:** `{"command": "npx", "args": ["-y", "crumplelab@0.3.5", "mcp"]}`. Tools: `crumple_scan`
   (the setup scan, local and instant), `crumple_site` (what a deployed app shows every visitor) and
   `crumple_traps`. The full crash test spends API credit, so it stays a command you run on purpose.
 
