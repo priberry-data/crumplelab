@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The old web app check on crumple.priberry.com (`/api/check`, `/api/watch`) is retired and answers 410: the check lives at greenlit.priberry.com.
+- `crumple site` finds Supabase keys with a linear scan, and its script and link patterns stop at the next `<`, so a crafted page can't make it slow.
+
 ## 0.3.5
 
 - `scan --cves` checks the MCP servers your agents start (npx, bunx, pnpm dlx, uvx) against published vulnerabilities on osv.dev, and names the release that fixes each one. It is opt-in because it is the only part of `scan` that goes online; it sends package names and versions, nothing else. A server that isn't pinned is checked at its newest version. The MCP tool `crumple_scan` takes `cves: true` for the same check.
