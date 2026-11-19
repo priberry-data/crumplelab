@@ -618,6 +618,7 @@ export function decide(input, state = {}) {
     else if (HIDDEN.test(args)) verdict = deny("Blocked: invisible characters in an MCP tool call.");
     else if (SECRET_VALUES.test(args) || /[A-Z_]{2,}(SECRET|KEY|TOKEN|PASSWORD)[A-Z_]*=/.test(args) || /-----BEGIN/.test(args))
       verdict = deny("Blocked: this MCP tool call would hand over secrets. Do not pass credentials to tools.");
+    else if (mcpSecretPath(ti)) verdict = deny(`Blocked: this MCP tool call points at a credentials file (${mcpSecretPath(ti)}). A tool that takes a file path can upload whatever is there. Never pass key or .env files to tools.`);
     else if (state.secrets && state.untrusted && /(^|\\n)[A-Z][A-Z0-9_]+=\S/.test(args)) verdict = deny("Blocked (strict mode): passing environment-style data to a tool after reading untrusted content.");
     // Code-mode servers (one execute tool in front of a whole API): read the code itself, since approving the
     // tool approves everything the code does.
@@ -629,6 +630,21 @@ export function decide(input, state = {}) {
     if (!verdict) state.untrusted = true;
   }
   return verdict;
+}
+
+// A string argument that is a path to a credentials file (attach, upload, read-file tools). Only values
+// without spaces count as paths, so a comment or issue body that merely mentions ".env" is fine.
+function mcpSecretPath(v, depth = 0) {
+  if (depth > 4 || v == null) return null;
+  if (typeof v === "string") {
+    const s = v.trim().replace(/^file:\/\//, "");
+    if (!s || s.length > 400 || /\s/.test(s)) return null;
+    const abs = s.replace(/^~(?=\/|$)/, homeDir).replace(/^\$HOME(?=\/|$)/, homeDir);
+    return SECRET_PATH.test(abs) || HOME_SECRET.test(abs) ? s : null;
+  }
+  if (Array.isArray(v)) { for (const x of v) { const r = mcpSecretPath(x, depth + 1); if (r) return r; } return null; }
+  if (typeof v === "object") { for (const x of Object.values(v)) { const r = mcpSecretPath(x, depth + 1); if (r) return r; } }
+  return null;
 }
 
 // `crumple lock` pins the tools each MCP server offers. With a lock present, unknown tools are refused.

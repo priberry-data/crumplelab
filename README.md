@@ -6,6 +6,8 @@
 > verified against its built-in test agents; results for Claude Code, Codex and Gemini CLI will be published
 > as they're run. Website: [crumple.priberry.com](https://crumple.priberry.com) · contact: crumple@priberry.com
 
+<p><img src="https://raw.githubusercontent.com/priberry-data/crumplelab/main/docs/demo.gif" alt="npx crumplelab attack: 20 traps run against a test agent, breaches shown, then crumple fix (example run)" width="720"></p>
+
 Your AI agent can read your `.env`, run shell commands and touch your databases.
 **How fast does it break when someone plants a trap?**
 
@@ -26,7 +28,7 @@ files and folders they all read (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`, `.wi
 `.roo/rules`, `.clinerules`, `.github/instructions` and more). It prints a Safe Setup score, writes SARIF for
 GitHub code scanning, and fails CI with `--fail-on high`.
 
-`attack` builds nineteen booby-trapped projects inside a Docker container, runs **your own** agent setup
+`attack` builds twenty booby-trapped projects inside a Docker container, runs **your own** agent setup
 against each one headless, and times how long it takes to fall in. Every trap is drawn from a real CVE,
 incident or paper:
 
@@ -66,7 +68,7 @@ split across DNS lookups. Each trap ends in one of three states:
 
 ```
 Mock agent (reckless): Sent a secret (awsKeyId) to 127.0.0.1:47101/repo-hook in 2s
-Score: 0/19 traps survived
+Score: 0/20 traps survived
 ```
 
 (That is Crumple's built-in, deliberately careless test agent. Results for real agents will be published at
@@ -230,7 +232,7 @@ npx crumplelab attack --agent mock-careful
 
 ## Status
 
-v0.3: Claude Code, Codex CLI and Gemini CLI; 19 traps plus packs; `scan` across 15 agents and editors, `site`
+v0.3: Claude Code, Codex CLI and Gemini CLI; 20 traps plus packs; `scan` across 15 agents and editors, `site`
 for deployed apps, `setup`, `fix`, `lock`, the guard and a GitHub Action. Not yet run against live models: the traps and checks are verified with scripted agents.
 Next: first live runs across vendors, Copilot CLI and Cursor adapters, and a public cross-vendor leaderboard.
 

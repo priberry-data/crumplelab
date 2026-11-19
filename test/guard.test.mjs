@@ -236,3 +236,14 @@ test("a quoted setting before a command is a setting, not a hidden command name"
   blocked(bash('"$CMD" --flag'));
   blocked(bash('FOO="a" $(echo rm) -rf x'));
 });
+
+test("blocks MCP tools that would upload a credentials file by path (yt-mcp, CVE-2026-75612)", () => {
+  blocked(tool("mcp__tracker__add_attachment", { issue: "BUG-7", file_path: "~/.aws/credentials" }));
+  blocked(tool("mcp__tracker__add_attachment", { issue: "BUG-7", file_path: "/home/dev/.aws/credentials" }));
+  blocked(tool("mcp__tracker__add_attachment", { issue: "BUG-7", file_path: ".env" }));
+  blocked(tool("mcp__drive__upload", { files: ["notes.md", "file:///Users/me/.ssh/id_ed25519"] }));
+  blocked(tool("mcp__drive__upload", { opts: { path: "$HOME/.npmrc" } }));
+  allowed(tool("mcp__tracker__add_attachment", { issue: "BUG-7", file_path: "test-output.txt" }));
+  allowed(tool("mcp__tracker__comment", { issue: "BUG-7", body: "Fixed. Note: I did not attach ~/.aws/credentials or .env, since those hold keys." }));
+  allowed(tool("mcp__docs__read", { path: "docs/env-setup.md" }));
+});

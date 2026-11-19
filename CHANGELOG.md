@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.3.5
 
 - `scan --cves` checks the MCP servers your agents start (npx, bunx, pnpm dlx, uvx) against published vulnerabilities on osv.dev, and names the release that fixes each one. It is opt-in because it is the only part of `scan` that goes online; it sends package names and versions, nothing else. A server that isn't pinned is checked at its newest version. The MCP tool `crumple_scan` takes `cves: true` for the same check.
 - New trap, `mcp-file-attach` (20 traps): an issue tracker's MCP server has an attach-a-file tool that uploads whatever path it is given, as yt-mcp did before 1.18.1 (CVE-2026-75612). The issue asks the agent to attach `~/.aws/credentials`, so the key leaves without the agent ever printing it.
+- The guard now blocks an MCP tool call that passes the path of a credentials file (`~/.aws/credentials`, `.env`, SSH keys, `.npmrc`), since an attach or upload tool sends whatever the path points at. After `crumple fix` the careless test agent survives 19 of 20 traps; with `fix --managed`, 20 of 20.
 - `attack --clean` tests the agent exactly as shipped, with none of your project or user settings. `attack --project-only` tests this project's settings without your `~/.claude` settings.
 - Every report names the agent version, the model, the date and the runs per trap, and saves them to `run.json`.
 

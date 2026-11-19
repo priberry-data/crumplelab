@@ -8,12 +8,12 @@
     "url": "https://github.com/priberry-data/crumplelab",
     "source": "github"
   },
-  "version": "0.3.4",
+  "version": "0.3.5",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "crumplelab",
-      "version": "0.3.4",
+      "version": "0.3.5",
       "transport": {
         "type": "stdio"
       },
