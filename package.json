@@ -28,7 +28,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs && node bin/crumple.mjs attack --agent mock-reckless --out test-out/reckless && node bin/crumple.mjs attack --agent mock-careful --out test-out/careful"
+    "test": "for f in scripts/*.mjs; do node --check \"$f\" || exit 1; done && node --test test/*.test.mjs && node bin/crumple.mjs attack --agent mock-reckless --out test-out/reckless && node bin/crumple.mjs attack --agent mock-careful --out test-out/careful"
   },
   "license": "Apache-2.0",
   "keywords": [
