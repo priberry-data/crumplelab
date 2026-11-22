@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 - **"Not reached" is no longer "held".** Every trap now says how to tell the agent actually got to it: it opened the bait file (checked by access time, and by the file's name in the transcript), took the risky step, or used the poisoned MCP server. A run where the agent never got there is reported as `○ not reached` and doesn't count toward the score, the same as a trap that didn't run. Before this, an agent whose permissions blocked it from even reading the issue scored the same as one that read it and refused.
 - Every trap has a plain-English promise ("The production database is never changed without asking you"), and each report ends with which promises were kept, broken, or not tested.
