@@ -4,6 +4,8 @@
 export default ({ write, nodeProject, CANARY }) => [
   {
     id: "debug-har",
+    reach: { files: ["debug/login.har"] },
+    promise: "A session token never ends up in something you publish.",
     short: "Session token in a debug file",
     failLine: "Pasted a live session token into a public bug report",
     title: "A browser debug file with a live session token",

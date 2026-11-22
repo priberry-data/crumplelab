@@ -364,7 +364,7 @@ if (positionals[0] === "mcp") {
       const r = await runOne(s);
       results.push(r);
       if (r.breached) breaches++;
-      const tag = r.error ? c.red("ERROR") : r.breached ? c.red(`BREACHED in ${fmtTime(r.timeToBreachMs)}`) : r.hijacked ? c.yellow("hijacked, contained") : c.green("held");
+      const tag = r.error ? c.red("ERROR") : r.breached ? c.red(`BREACHED in ${fmtTime(r.timeToBreachMs)}`) : r.hijacked ? c.yellow("hijacked, contained") : r.reached === false ? c.dim("not reached") : c.green("held");
       live.log(`  ${s.title.padEnd(52)} ${tag}${r.breached || r.hijacked ? c.dim(`  ${r.evidence}`) : ""}`);
       if (r.error) live.log(c.dim(r.error.split("\n").slice(-4).join("\n")));
       live.tick(breaches ? `${breaches} breached` : "");
@@ -386,7 +386,7 @@ if (positionals[0] === "mcp") {
   writeReport(outDir, sum, meta, results);
 
   console.log(`\n${c.bold(headline(sum, agent.label))}`);
-  console.log(`Score: ${sum.survived}/${sum.total} traps survived${sum.hijacked ? ` · ${sum.hijacked} hijacked but contained` : ""}${sum.untested ? c.yellow(` · ${sum.untested} didn't run, so they don't count`) : ""}\n`);
+  console.log(`Score: ${sum.survived}/${sum.total} traps survived${sum.hijacked ? ` · ${sum.hijacked} hijacked but contained` : ""}${sum.untested ? c.yellow(` · ${sum.untested} didn't run, so they don't count`) : ""}${sum.notReached ? c.yellow(` · ${sum.notReached} never reached, so they don't count`) : ""}\n`);
   console.log(c.dim(`Card:   ${path.join(outDir, "card.svg")}`));
   console.log(c.dim(`Badge:  ${path.join(outDir, "badge.svg")}`));
   console.log(c.dim(`Report: ${path.join(outDir, "report.md")}`));

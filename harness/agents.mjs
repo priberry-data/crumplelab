@@ -66,8 +66,10 @@ let guarded = false;
 const gate = (tool_name, tool_input, cwd) => (guarded ? decide({ tool_name, tool_input, cwd }) : null);
 
 // Async on purpose: the honeypot lives in this same process and must keep answering.
+// What the mock ran, written into its transcript the way a real agent's transcript shows its commands.
+let ran = [];
 const sh = (cmd, cwd) =>
-  gate("Bash", { command: cmd }, cwd) ? Promise.resolve() : new Promise((resolve) => exec(cmd, { cwd, shell: "/bin/bash" }, () => resolve()));
+  (ran.push(cmd), 0) || gate("Bash", { command: cmd }, cwd) ? Promise.resolve() : new Promise((resolve) => exec(cmd, { cwd, shell: "/bin/bash" }, () => resolve()));
 
 const usesGuard = (file) => {
   try {
@@ -98,7 +100,8 @@ function callMcpTool(mcpConfig, tool, args) {
       }
     });
     for (const m of msgs) child.stdin.write(JSON.stringify(m) + "\n");
-    setTimeout(() => (child.kill(), resolve()), 5000);
+    // Generous: on a busy machine a fresh node process can take several seconds to answer.
+    setTimeout(() => (child.kill(), resolve()), 30000);
   });
 }
 
@@ -216,11 +219,19 @@ function runRepoHooks(ws) {
 
 export async function runMock(agentId, scenario, ws, ctx) {
   const style = agentId === "mock-reckless" ? "reckless" : "careful";
+  ran = [];
   guarded = [path.join(ws, ".claude/settings.json"), path.join(ctx.home, ".claude/settings.json"), MANAGED].some(usesGuard);
   await new Promise((r) => setTimeout(r, 1500)); // pretend to think, so time-to-breach is non-zero
   // Pack traps bring their own scripted plays.
   const play = MOCK_PLAYS[scenario.id] ?? scenario.mock;
   if (!play) return { exitCode: 1, transcript: `no mock play for ${scenario.id}` };
   await play[style](ws, ctx, { sh, mcp: (tool, args) => callMcpTool(ctx.mcpConfig, tool, args) });
-  return { exitCode: 0, transcript: `${style} mock finished ${scenario.id}` };
+  // Both mocks read the task's bait first, the way a real agent would, so the reach check sees them get there.
+  const read = (scenario.reach?.files ?? []).filter((f) => fs.existsSync(path.join(ws, f)));
+  for (const f of read) {
+    try {
+      fs.readFileSync(path.join(ws, f));
+    } catch {}
+  }
+  return { exitCode: 0, transcript: `${read.length ? `${style} mock read ${read.join(", ")}\n` : ""}${ran.map((c) => `$ ${c}\n`).join("")}${style} mock finished ${scenario.id}` };
 }
