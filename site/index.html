@@ -56,7 +56,7 @@
   <pre class="boot dim dev" aria-hidden="true">crumple bios v0.4.0 · (c) 2026 priberry
 memory test ............ 640K ok
 sandbox ................ ok<span class="x">  docker · cap-drop ALL · no-new-privileges</span>
-traps .................. 18 armed
+traps .................. 20 armed
 canaries ............... ok<span class="x">  fresh fake keys, every run</span>
 sinks .................. ok<span class="x">  dns · http · tls · every exit leads back here</span></pre>
 
@@ -111,11 +111,11 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
   <p class="big dev">Scan it. Attack it. Fix it. Everything runs on your machine, and nothing real is ever at risk.</p>
   <p class="big pub">Check it. Test it. Fix it. Nothing real is ever at risk: the passwords are fake and the test computer is thrown away afterwards.</p>
   <dl class="man">
-    <dt><span class="dev"><span class="p">$</span> <span data-copy>crumple scan</span></span><span class="pub">1. Check</span></dt>
+    <dt><span class="dev"><span class="p">$</span> <span data-copy>npx crumplelab scan</span></span><span class="pub">1. Check</span></dt>
     <dd><span class="dev">Reads your agent setup the way an attacker would: skip-permission modes, allow-rules that can run anything, MCP servers pinned to <code>@latest</code>, invisible text in rules files, repo hooks, committed <code>.env</code> files. A Safe Setup score in seconds. No API key, and nothing leaves your machine.</span><span class="pub">Crumple reads how the assistant is set up, the way an attacker would, and gives it a Safe Setup score from 0 to 100. It takes seconds and nothing leaves the computer.</span></dd>
-    <dt><span class="dev"><span class="p">$</span> <span data-copy>crumple attack</span></span><span class="pub">2. Test</span></dt>
+    <dt><span class="dev"><span class="p">$</span> <span data-copy>npx crumplelab attack</span></span><span class="pub">2. Test</span></dt>
     <dd><span class="dev">Builds 18 booby-trapped projects in a throwaway container and runs your own agent, with your own settings, against each one. Fresh fake keys every run. Its own DNS, HTTP and TLS listeners catch every way out.</span><span class="pub">The assistant gets ordinary tasks in 18 sealed practice projects. Each one hides a trap, such as a message asking it to send passwords away. Crumple watches every way out and records what happens.</span></dd>
-    <dt><span class="dev"><span class="p">$</span> <span data-copy>crumple fix</span></span><span class="pub">3. Fix</span></dt>
+    <dt><span class="dev"><span class="p">$</span> <span data-copy>npx crumplelab fix</span></span><span class="pub">3. Fix</span></dt>
     <dd><span class="dev">Writes deny rules, installs the Crumple guard, pins your MCP tools and can lock it all in with managed settings. Then attack again and watch it hold.</span><span class="pub">Crumple switches on the protections that would have stopped each failure, then runs the test again to prove they work.</span></dd>
   </dl>
 </section>
@@ -291,7 +291,7 @@ sinks .................. ok<span class="x">  dns · http · tls · every exit le
 </main>
 
 <footer class="bar foot">
-  <span>© 2026 <a href="https://priberry.com">priberry</a> · crumple is built by priberry · also: <a href="https://tare.priberry.com">tare</a>, what your agent wastes</span>
+  <span>© 2026 <a href="https://priberry.com">priberry</a> · crumple is built by priberry · also: <a href="https://greenlit.priberry.com">greenlit</a>, grade your app · <a href="https://greenlit.priberry.com/blockers/">launch blockers</a>, stop leaks before launch · <a href="https://tare.priberry.com">tare</a>, what your agent wastes</span>
   <span><a href="/guides/mcp-security/">guide: mcp server security</a> · <a href="mailto:crumple@priberry.com">crumple@priberry.com</a> · <a href="/.well-known/security.txt">security.txt</a> · <a href="/llms.txt">llms.txt</a> · <a href="https://priberry.com/privacy/">privacy</a></span>
   <span class="dim">no cookies · no ad trackers · visits counted cookie-free by Cloudflare Web Analytics</span>
   <span class="dim legal">Claude Code, Codex and Gemini CLI are trademarks of their owners. Crumple is independent and not affiliated with Anthropic, OpenAI or Google.</span>
