@@ -98,8 +98,8 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
     if (f === P(".claude/settings.json") && s.hooks && !/guard\.mjs/.test(hooks)) add("medium", where, "This repository ships its own hooks", "Hooks in a cloned repo run commands on your machine as soon as the agent starts.", "Review them before running an agent here.");
     if (s.sandbox?.enabled) sandboxed = true;
   }
-  if (!guarded) add("medium", "agent setup", "No runtime guard checks the agent's commands", "Nothing stops a hijacked agent from sending keys out or deleting data between your prompts.", "Run `crumple fix`.");
-  if (!sandboxed) add("medium", "agent setup", "The agent's commands don't run in a sandbox", "Commands can reach every file you can and any server on the internet. Sandboxes and egress limits are the defenses research shows hold up under adaptive attacks.", "Run `crumple fix --sandbox` to switch on Claude Code's built-in sandbox with a network allowlist.");
+  if (!guarded) add("medium", "agent setup", "No runtime guard checks the agent's commands", "Nothing stops a hijacked agent from sending keys out or deleting data between your prompts.", "Run `npx crumplelab fix`.");
+  if (!sandboxed) add("medium", "agent setup", "The agent's commands don't run in a sandbox", "Commands can reach every file you can and any server on the internet. Sandboxes and egress limits are the defenses research shows hold up under adaptive attacks.", "Run `npx crumplelab fix --sandbox` to switch on Claude Code's built-in sandbox with a network allowlist.");
 
   // --- MCP servers, across agents -------------------------------------------------------------
   const app = appSupport(home);
@@ -133,7 +133,7 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
         const pkg = parts.slice(1).find((a) => !String(a).startsWith("-") && !/^(dlx|x)$/.test(a)) ?? "";
         const spec = packageSpec(pkg, /\buvx\b/.test(cmd) ? "PyPI" : "npm");
         if (spec) packages.push({ where, ...spec });
-        if (!/@\d/.test(pkg.replace(/^@[^/]+\//, "")) || /@latest$/.test(pkg)) add("high", where, `MCP server runs whatever version is newest (${pkg || cmd})`, "If that package is ever compromised or sold, your agent runs the new code with your keys the next time it starts (MCP rug pull).", `Pin an exact version, for example ${pkg.replace(/@latest$/, "")}@1.2.3, and run \`crumple lock\`.`);
+        if (!/@\d/.test(pkg.replace(/^@[^/]+\//, "")) || /@latest$/.test(pkg)) add("high", where, `MCP server runs whatever version is newest (${pkg || cmd})`, "If that package is ever compromised or sold, your agent runs the new code with your keys the next time it starts (MCP rug pull).", `Pin an exact version, for example ${pkg.replace(/@latest$/, "")}@1.2.3, and run \`npx crumplelab lock\`.`);
       }
       const blob = JSON.stringify({ env: srv.env ?? srv.environment, args: parts.slice(1), headers: srv.headers, url: srv.url });
       if (SECRET_VALUES.test(blob) || /"[A-Z_]*(TOKEN|SECRET|KEY|PASSWORD)[A-Z_]*":"[^"$]{12,}"/.test(blob)) add("high", where, "MCP server config holds a secret in plain text", "Any agent or extension that reads this file gets the key.", "Reference an environment variable or keychain entry instead.");
@@ -160,7 +160,7 @@ export function scan(projectDir, { home = os.homedir() } = {}) {
     if (t == null) continue;
     if (HIDDEN.test(t)) {
       const decoded = [...t].filter((c) => c.codePointAt(0) >= 0xe0000 && c.codePointAt(0) <= 0xe007f).map((c) => String.fromCharCode(c.codePointAt(0) - 0xe0000)).join("");
-      add("critical", rel(f), "Invisible characters hidden in a file your agent reads", `Agents read text you can't see (the "rules file backdoor").${decoded ? ` Hidden text says: "${redact(decoded.slice(0, 120))}"` : ""}`, "Delete the invisible characters (`crumple scan` lists them) and check who added them.");
+      add("critical", rel(f), "Invisible characters hidden in a file your agent reads", `Agents read text you can't see (the "rules file backdoor").${decoded ? ` Hidden text says: "${redact(decoded.slice(0, 120))}"` : ""}`, "Delete the invisible characters (`npx crumplelab scan` lists them) and check who added them.");
     }
     if (INJECTION.test(t)) add("high", rel(f), "Text that looks like instructions aimed at an AI agent", `Found: "${redact(t.match(INJECTION)[0]).slice(0, 80)}"`, "Remove it, or make sure your agent treats this file as untrusted.");
     if (SECRET_VALUES.test(t)) add("high", rel(f), "A live-looking secret inside a file the agent reads", "It ends up in every prompt and transcript.", "Remove it and rotate the key.");

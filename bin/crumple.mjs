@@ -150,7 +150,7 @@ if (positionals[0] === "mcp") {
     for (const e of cves?.errors ?? []) console.log(c.dim(`Couldn't check ${e}`));
     console.log(`Safe Setup score: ${color(`${result.score}/100 (${result.grade})`)} · ${result.findings.length} findings · ${cves ? `${cves.checked} MCP servers checked against osv.dev (only package names and versions were sent)` : "nothing left this machine"}`);
     if (!opt.cves && result.mcpPackages.length) console.log(c.dim(`Add --cves to check your ${result.mcpPackages.length} MCP servers against published vulnerabilities (sends only package names and versions to osv.dev).`));
-    console.log(c.dim("Next: `crumple fix` to harden, then `crumple attack` to prove it."));
+    console.log(c.dim("Next: `npx crumplelab fix` to harden, then `npx crumplelab attack` to prove it."));
   }
   const failOn = opt["fail-on"];
   if (failOn && result.findings.some((f) => SEVERITY[f.severity] >= SEVERITY[failOn])) process.exitCode = 1;
@@ -195,7 +195,7 @@ if (positionals[0] === "mcp") {
   if (opt.check) {
     const locked = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).servers : null;
     if (!locked) {
-      console.log(c.red("No MCP lock yet. Run `crumple lock` first."));
+      console.log(c.red("No MCP lock yet. Run `npx crumplelab lock` first."));
       process.exitCode = 1;
     } else {
       const changes = diff(locked, now);
@@ -234,10 +234,12 @@ if (positionals[0] === "mcp") {
     console.log(`    sudo mkdir -p "${guardHome}" && sudo cp "${path.join(ROOT, "harness")}"/{guard,shell}.mjs "${guardHome}/"`);
     console.log(`    sudo cp "${draft}" "${MANAGED_SETTINGS}"`);
   }
-  console.log(c.dim(`\nNow run ${c.bold("crumple attack")} again to see the difference.`));
+  console.log(c.dim(`\nNow run ${c.bold("npx crumplelab attack")} again to see the difference.`));
 } else {
   if (opt.help || positionals[0] !== "attack") {
-    console.log(`Usage: crumple attack [options]
+    console.log(`Run any command with npx (npx crumplelab scan), or npm i -g crumplelab to type crumple.
+
+Usage: crumple attack [options]
        crumple scan [--cves] [--sarif f] [--fail-on high]   instant local audit of your agent setup (no key, no Docker); --cves also checks MCP servers against osv.dev
        crumple setup [--dry-run] [--undo]       add Crumple to every AI coding app here (Cursor, VS Code, Windsurf, Claude, Codex, Gemini CLI, Cline, Kiro…)
        crumple site <url> [--mine] [--prompt N]  grade a deployed app (Lovable, Bolt, v0, Replit, Emergent, any site): leaked keys, open data, fix prompts

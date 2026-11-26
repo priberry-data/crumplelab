@@ -614,7 +614,7 @@ export function decide(input, state = {}) {
     if (!verdict) state.untrusted = true;
   } else if (tool.startsWith("mcp__")) {
     const args = JSON.stringify(ti);
-    if (!mcpToolLocked(ctx.cwd, tool)) verdict = deny(`Blocked: ${tool} is not in this project's MCP lock (.crumple/mcp.lock.json). A server added or changed a tool; run \`crumple lock --check\` and review it.`);
+    if (!mcpToolLocked(ctx.cwd, tool)) verdict = deny(`Blocked: ${tool} is not in this project's MCP lock (.crumple/mcp.lock.json). A server added or changed a tool; run \`npx crumplelab lock --check\` and review it.`);
     else if (HIDDEN.test(args)) verdict = deny("Blocked: invisible characters in an MCP tool call.");
     else if (SECRET_VALUES.test(args) || /[A-Z_]{2,}(SECRET|KEY|TOKEN|PASSWORD)[A-Z_]*=/.test(args) || /-----BEGIN/.test(args))
       verdict = deny("Blocked: this MCP tool call would hand over secrets. Do not pass credentials to tools.");
